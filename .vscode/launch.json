@@ -1,0 +1,235 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "CLIP feature test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "/home/OpenPCDet/tools/cfgs/openset/clip_test.yaml",
+                "--batch_size",
+                "1",
+                "--pretrained_model",
+                "/home/OpenPCDet/output/cfgs/openset/train/centerpoint-nuscenes_detection_train_clip_freeze/default/ckpt/checkpoint_epoch_30.pth"
+            ],
+        },
+
+
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+            }
+        },
+
+
+        {
+            "name": "create_data",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/pcdet/datasets/nuscenes/openset_nuscenes_dataset.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--func",
+                "create_nuscenes_infos",
+                "--cfg_file",
+                "tools/cfgs/dataset_configs/nuscenes_dataset_origin.yaml",
+                "--version",
+                "v1.0-trainval",
+                "--with_cam"
+            ],
+        },
+
+        {
+            "name": "centerpt-nuscenes-train",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "/home/OpenPCDet/tools/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline_b16.yaml"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "4"
+            }
+        },
+        {
+            "name": "centerpt-nuscenes-test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "/home/OpenPCDet/tools/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline.yaml",
+                "--batch_size",
+                "1",
+                "--ckpt",
+                "/home/OpenPCDet/output/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline/default/ckpt/checkpoint_epoch_30.pth"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "4"
+            }
+        },
+
+
+
+        {
+            "name": "openset_centerpt-nuscenes-train",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/openset/train/centerpoint-nuscenes.yaml"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "2",
+                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+        {
+            "name": "openset_centerpt-nuscenes-detection-train-clip-freeze",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/openset/centerpoint-nuscenes_detection_train_clip_freeze.yaml",
+                // "--pretrained_model",
+                // "/home/OpenPCDet/output/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline_b16/default/ckpt/checkpoint_epoch_30.pth"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "2",
+                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+
+
+
+        {
+            "name": "openset_centerpt-nuscenes-detection-train-clip-freeze-test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/openset/centerpoint-nuscenes_detection_train_clip_freeze.yaml",
+                "--batch_size",
+                "1",
+                "--ckpt",
+                "/home/OpenPCDet/output/cfgs/openset/train/centerpoint-nuscenes_detection_train_clip_freeze/default/ckpt/checkpoint_epoch_30.pth"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+
+
+
+        {
+            "name": "openset_centerpt-nuscenes-detection-freeze-clip-train",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train.yaml",
+                "--pretrained_model",
+                "/home/OpenPCDet/output/combined_weight_detection30_reconlatest.pth"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "2",
+                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+        {
+            "name": "openset_centerpt-nuscenes-test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/openset/centerpoint-nuscenes.yaml",
+                "--batch_size",
+                "1",
+                "--ckpt",
+                "/home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes/default/ckpt/checkpoint_epoch_14.pth"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "4"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+
+
+
+        {
+            "name": "Recon-train",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/openset/centerpoint-nuscenes_reconstruction.yaml"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "PYDEVD_UNBLOCK_THREADS_TIMEOUT": "500"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+        {
+            "name": "Recon-test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/test_recon.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/openset/centerpoint-nuscenes_reconstruction.yaml",
+                "--batch_size",
+                "1",
+                "--eval_all"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+    ]
+}
