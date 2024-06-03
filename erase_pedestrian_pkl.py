@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 
 
-with open('/home/OpenPCDet/data/nuscenes/v1.0-trainval/nuscenes_infos_10sweeps_train_with_clip.pkl', 'rb') as f:
+with open('/home/OpenPCDet/data/nuscenes/v1.0-trainval/nuscenes_infos_10sweeps_val.pkl', 'rb') as f:
 	full = pickle.load(f)
 
 
@@ -16,7 +16,7 @@ for i,sample in enumerate(tqdm(full)):
      gt_tokens = sample['gt_boxes_token']
      
      num_gt = len(gt_names)
-     additional_gt_names = np.array(['object'] * num_gt, dtype=str)
+     additional_gt_names = np.array(['objectness'] * num_gt, dtype=str)
      
      gt_names = np.concatenate((gt_names,additional_gt_names),axis=0)
      gt_velocity = np.concatenate((gt_velocity, gt_velocity), axis=0)
@@ -41,7 +41,7 @@ for i,sample in enumerate(tqdm(full)):
      full[i]['gt_boxes_token'] = gt_tokens
 
 
-pickle.dump(full, open('/home/OpenPCDet/data/nuscenes/v1.0-trainval/nuscenes_infos_10sweeps_train_with_clip_agnostic.pkl', 'wb'))
+pickle.dump(full, open('/home/OpenPCDet/data/nuscenes/v1.0-trainval/nuscenes_infos_10sweeps_val_agnostic.pkl', 'wb'))
 print("success!")
 
 

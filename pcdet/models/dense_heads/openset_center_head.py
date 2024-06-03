@@ -462,6 +462,64 @@ from functools import partial
 import torch.nn.functional as F
 
 
+
+
+class DeeperSkipConnectionModel(nn.Module):
+    def __init__(self):
+        super(DeeperSkipConnectionModel, self).__init__()
+        
+        # Define the initial convolution layer
+        self.initial_conv = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.initial_bn = nn.BatchNorm2d(64)
+        
+        # Define a series of convolution layers with skip connections
+        self.conv1 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.conv4 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn4 = nn.BatchNorm2d(64)
+        self.conv5 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn5 = nn.BatchNorm2d(64)
+        self.conv6 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn6 = nn.BatchNorm2d(64)
+        
+        # Define the final convolution layers
+        self.final_conv1 = nn.Conv2d(64, 32, kernel_size=3, padding=1)
+        self.final_bn1 = nn.BatchNorm2d(32)
+        self.final_conv2 = nn.Conv2d(32, 16, kernel_size=3, padding=1)
+        self.final_bn2 = nn.BatchNorm2d(16)
+        
+        # Define activation function
+        self.relu = nn.ReLU(inplace=True)
+        
+    def forward(self, x):
+        # Initial convolution
+        x_initial = self.relu(self.initial_bn(self.initial_conv(x)))
+        
+        # First set of convolutions with skip connection
+        x1 = self.relu(self.bn1(self.conv1(x_initial)))
+        x1 = self.relu(self.bn2(self.conv2(x1) + x_initial))  # Skip connection
+        
+        # Second set of convolutions with skip connection
+        x2 = self.relu(self.bn3(self.conv3(x1) + x1))  # Skip connection
+        x2 = self.relu(self.bn4(self.conv4(x2) + x1))  # Additional Skip connection
+        
+        # Third set of convolutions with skip connection
+        x3 = self.relu(self.bn5(self.conv5(x2) + x2))  # Skip connection
+        x3 = self.relu(self.bn6(self.conv6(x3) + x2))  # Additional Skip connection
+        
+        # Final convolutions
+        out = self.relu(self.final_bn1(self.final_conv1(x3)))
+        out = self.final_bn2(self.final_conv2(out))
+        # out = self.relu(out)
+        
+        return out
+
+
+
 class SeparateHead(nn.Module):
     def __init__(self, input_channels, sep_head_dict, init_bias=-2.19, use_bias=False, norm_func=None, class_agnoistic=False, clip_train=False):
         super().__init__()
@@ -487,11 +545,15 @@ class SeparateHead(nn.Module):
                 ))
                 
             if cur_name == 'clip' and clip_train:
-                fc_list.append(
-                    nn.Sequential(
-                    nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1, bias=True),
-                    # nn.BatchNorm2d(32) if norm_func is None else norm_func(32),))
-                    ))
+                clip_conv = DeeperSkipConnectionModel()
+                # fc_list.append(
+                #     nn.Sequential(
+                #     nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1, bias=True),
+                #     nn.BatchNorm2d(32) if norm_func is None else norm_func(32),
+                #     nn.ReLU(),
+                #     nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1, bias=True),
+                #     ))
+                fc_list.append(clip_conv)       
                     
             else:
                 fc_list.append(nn.Conv2d(input_channels, output_channels, kernel_size=3, stride=1, padding=1, bias=True))
@@ -910,6 +972,5 @@ class Openset_CenterHead(nn.Module):
                 data_dict['has_class_labels'] = True
             else:
                 data_dict['final_box_dicts'] = pred_dicts
-
         return data_dict
 

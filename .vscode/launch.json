@@ -28,7 +28,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true,
+            "justMyCode": false,
             "env": {
                 "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
             }
@@ -162,7 +162,30 @@
             "justMyCode": true,
             "args": [
                 "--cfg_file",
-                "./cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train.yaml",
+                "./cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train_cos_mask.yaml",
+                "--pretrained_model",
+                "/home/OpenPCDet/output/combined_weight_detection30_reconlatest.pth",
+                // "--ckpt",
+                // "/home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train_l2_mask/default/ckpt/checkpoint_epoch_190.pth"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "2",
+                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+
+
+        {
+            "name": "openset_centerpt-nuscenes-detection-freeze-clip-trainv2",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_trainv2.yaml",
                 "--pretrained_model",
                 "/home/OpenPCDet/output/combined_weight_detection30_reconlatest.pth"
             ],
@@ -171,7 +194,12 @@
                 "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
             },
             "cwd": "/home/OpenPCDet/tools"
-        },
+        },     
+
+
+
+
+
         {
             "name": "openset_centerpt-nuscenes-test",
             "type": "python",
@@ -204,7 +232,7 @@
             "justMyCode": true,
             "args": [
                 "--cfg_file",
-                "./cfgs/openset/centerpoint-nuscenes_reconstruction.yaml"
+                "./cfgs/openset/centerpoint-nuscenes_reconstruction_bev.yaml"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0",

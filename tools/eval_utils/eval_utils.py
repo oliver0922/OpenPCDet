@@ -9,6 +9,15 @@ from pcdet.models import load_data_to_gpu
 from pcdet.utils import common_utils
 
 
+
+# import open3d
+# from tools.visual_utils import open3d_vis_utils
+# OPEN3D_FLAG = True
+# except:
+import mayavi.mlab as mlab
+from tools.visual_utils import visualize_utils as V
+OPEN3D_FLAG = False
+
 def statistics_info(cfg, ret_dict, metric, disp_dict):
     for cur_thresh in cfg.MODEL.POST_PROCESSING.RECALL_THRESH_LIST:
         metric['recall_roi_%s' % str(cur_thresh)] += ret_dict.get('roi_%s' % str(cur_thresh), 0)
@@ -65,6 +74,22 @@ def eval_one_epoch(cfg, args, model, dataloader, epoch_id, logger, dist_test=Fal
             pred_dicts, ret_dict = model(batch_dict)
 
         disp_dict = {}
+
+
+        #################### visualization ########################
+        
+        V.draw_scenes(
+                points=batch_dict['points'][:, 1:], ref_boxes=pred_dicts[0]['pred_boxes'],
+                ref_scores=pred_dicts[0]['pred_scores'], ref_labels=pred_dicts[0]['pred_labels']
+            )
+
+        if not OPEN3D_FLAG:
+                mlab.show(stop=True)
+        
+        
+        ###########################################################
+
+
 
         if getattr(args, 'infer_time', False):
             inference_time = time.time() - start_time

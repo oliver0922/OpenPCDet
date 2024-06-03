@@ -10,6 +10,18 @@ from functools import partial
 import torch.nn.functional as F
 
 
+
+CLASS_NAMES_EACH_HEAD= [
+            ['car'], 
+            ['truck', 'construction_vehicle'],
+            ['bus', 'trailer'],
+            ['barrier'],
+            ['motorcycle', 'bicycle'],
+            ['pedestrian', 'traffic_cone'],
+            ['objectness']
+        ]
+
+
 class SeparateHead(nn.Module):
     def __init__(self, input_channels, sep_head_dict, init_bias=-2.19, use_bias=False, norm_func=None, class_agnoistic=False, clip_train=False):
         super().__init__()
@@ -145,7 +157,7 @@ class Clip_test_CenterHead(nn.Module):
 
     def assign_target_of_single_head(
             self, num_classes, gt_boxes, feature_map_size, feature_map_stride, num_max_objs=500,
-            gaussian_overlap=0.1, min_radius=2
+            gaussian_overlap=0.1, min_radius=2 , head_idx = None
     ):
         """
         Args:
@@ -199,10 +211,14 @@ class Clip_test_CenterHead(nn.Module):
             if gt_boxes.shape[1] > 8: 
                 ret_boxes[k, 8:] = gt_boxes[k, 7:-1]
 
+
         return heatmap, ret_boxes, inds, mask, ret_boxes_src 
     ### ret_boxes (#num_max object, 10) -> voxel coordinate (x offset, y offset, z, w,l, h(log scale), cos, sin, velocity x velocity y )
 
     def assign_targets(self, gt_boxes, feature_map_size=None, **kwargs):
+        
+        
+
         """
         Args:
             gt_boxes: (B, M, 8)
@@ -234,16 +250,19 @@ class Clip_test_CenterHead(nn.Module):
                 gt_class_names = all_names[cur_gt_boxes[:, -1].cpu().long().numpy()]
 
                 gt_boxes_single_head = []
+                sub_class_idx_list = []
                 
                 # if 'pedestrian' in gt_class_names and 'traffic_cone' in gt_class_names:
                 #     print("1")
 
-                for idx, name in enumerate(gt_class_names): # gt_class_names -> gt_class name
+                for gt_idx, name in enumerate(gt_class_names): # gt_class_names -> gt_class name
                     if name not in cur_class_names:
                         continue
-                    temp_box = cur_gt_boxes[idx]
+                    temp_box = cur_gt_boxes[gt_idx]
                     temp_box[-1] = cur_class_names.index(name) + 1
                     gt_boxes_single_head.append(temp_box[None, :])
+                    sub_class_idx_list.append(CLASS_NAMES_EACH_HEAD[idx][(temp_box[-1]-1).int()])
+                    
 
                 if len(gt_boxes_single_head) == 0:
                     gt_boxes_single_head = cur_gt_boxes[:0, :]
@@ -256,6 +275,7 @@ class Clip_test_CenterHead(nn.Module):
                     num_max_objs=target_assigner_cfg.NUM_MAX_OBJS,
                     gaussian_overlap=target_assigner_cfg.GAUSSIAN_OVERLAP,
                     min_radius=target_assigner_cfg.MIN_RADIUS,
+                    head_idx = idx
                 ) 
                 heatmap_list.append(heatmap.to(gt_boxes_single_head.device)) # batch 단위
                 target_boxes_list.append(ret_boxes.to(gt_boxes_single_head.device))
@@ -440,6 +460,8 @@ class Clip_test_CenterHead(nn.Module):
                 feature_map_stride=data_dict.get('spatial_features_2d_strides', None)
             )
             self.forward_ret_dict['target_dicts'] = target_dict
+            data_dict['gt_inds'] = target_dict['inds']
+            data_dict['gt_class_inds'] = target_dict['target_boxes_src']
 
         self.forward_ret_dict['pred_dicts'] = pred_dicts
         if data_dict['clip_train']:

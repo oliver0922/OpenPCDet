@@ -616,6 +616,12 @@ def transform_det_annos_to_nusc_annos(det_annos, nusc):
             nusc=nusc, boxes=box_list, sample_token=det['metadata']['token']
         )
 
+        for i in range(len(box_list)):
+                if box_list[i].label == 11:
+                    del box_list[i]
+
+
+
         for k, box in enumerate(box_list):
             name = det['name'][k]
             if np.sqrt(box.velocity[0] ** 2 + box.velocity[1] ** 2) > 0.2:

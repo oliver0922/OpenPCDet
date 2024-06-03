@@ -63,6 +63,10 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
         scaler.step(optimizer)
         scaler.update()
 
+        # for name, param in model.named_parameters():
+        #     if param.grad is not None:
+        #         print(f'Gradient for {name}: {param.grad.norm()}')
+        
         accumulated_iter += 1
  
         cur_forward_time = time.time() - data_timer
@@ -220,25 +224,25 @@ def train_model(model, optimizer, train_loader, model_func, lr_scheduler, optim_
                     checkpoint_state(model, optimizer, trained_epoch, accumulated_iter), filename=ckpt_name,
                 )
 
-            if isinstance(model, Openset_CenterPoint_Recon):
-                logger.info('*************** Performance of EPOCH %s *****************' % trained_epoch)
-                model.load_params_from_file(filename=str(ckpt_name)+'.pth', logger=logger, to_cpu=False, 
-                            pre_trained_path=None)                    
-                model.eval()
-                validation_loss_per_epoch = 0
-                for i, batch_dict in enumerate(test_loader):
+            # if isinstance(model, Openset_CenterPoint_Recon):
+            #     logger.info('*************** Performance of EPOCH %s *****************' % trained_epoch)
+            #     model.load_params_from_file(filename=str(ckpt_name)+'.pth', logger=logger, to_cpu=False, 
+            #                 pre_trained_path=None)                    
+            #     model.eval()
+            #     validation_loss_per_epoch = 0
+            #     for i, batch_dict in enumerate(test_loader):
                     
-                    load_data_to_gpu(batch_dict)
-                    with torch.no_grad():
-                        loss, _ , _ = model(batch_dict)
-                    validation_loss_per_epoch += loss['loss']
+            #         load_data_to_gpu(batch_dict)
+            #         with torch.no_grad():
+            #             loss, _ , _ = model(batch_dict)
+            #         validation_loss_per_epoch += loss['loss']
                         
-                logger.info('Validataion: {:>4d}/{}  '
-                            'Loss: {} '.format(
-                                trained_epoch, total_epochs, validation_loss_per_epoch   
-                            )
-                )
-                tb_log.add_scalar('validation/loss', validation_loss_per_epoch, trained_epoch)
+            #     logger.info('Validataion: {:>4d}/{}  '
+            #                 'Loss: {} '.format(
+            #                     trained_epoch, total_epochs, validation_loss_per_epoch   
+            #                 )
+            #     )
+            #     tb_log.add_scalar('validation/loss', validation_loss_per_epoch, trained_epoch)
 
                     
 def model_state_to_cpu(model_state):

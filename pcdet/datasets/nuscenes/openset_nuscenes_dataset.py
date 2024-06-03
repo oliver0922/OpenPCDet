@@ -358,9 +358,9 @@ class Openset_NuScenesDataset(DatasetTemplate):
     def evaluation(self, det_annos, class_names, **kwargs):
         import json
         from nuscenes.nuscenes import NuScenes
-        from . import nuscenes_utils
+        from . import open_set_nuscenes_utils
         nusc = NuScenes(version=self.dataset_cfg.VERSION, dataroot=str(self.root_path), verbose=True)
-        nusc_annos = nuscenes_utils.transform_det_annos_to_nusc_annos(det_annos, nusc)
+        nusc_annos = open_set_nuscenes_utils.transform_det_annos_to_nusc_annos(det_annos, nusc)
         nusc_annos['meta'] = {
             'use_camera': False,
             'use_lidar': True,
@@ -408,7 +408,7 @@ class Openset_NuScenesDataset(DatasetTemplate):
         with open(output_path / 'metrics_summary.json', 'r') as f:
             metrics = json.load(f)
 
-        result_str, result_dict = nuscenes_utils.format_nuscene_results(metrics, self.class_names, version=eval_version)
+        result_str, result_dict = open_set_nuscenes_utils.format_nuscene_results(metrics, self.class_names, version=eval_version)
         return result_str, result_dict
 
     def create_groundtruth_database(self, used_classes=None, max_sweeps=10):

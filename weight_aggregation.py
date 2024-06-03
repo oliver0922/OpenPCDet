@@ -9,7 +9,6 @@ import torch
 state_dict1 = torch.load('/home/OpenPCDet/output/cfgs/openset/train/centerpoint-nuscenes_detection_train_clip_freeze/default/ckpt/checkpoint_epoch_30.pth')
 state_dict2 = torch.load('/home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes_reconstruction/default/ckpt/latest_model.pth')
 
-# 빈 딕셔너리 생성
 combined_state_dict = {}
 
 combined_state_dict.update(state_dict1)

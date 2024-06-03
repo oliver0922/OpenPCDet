@@ -9,8 +9,11 @@ from .caddn import CaDDN
 from .voxel_rcnn import VoxelRCNN
 from .centerpoint import CenterPoint
 from .openset_centerpoint import Openset_CenterPoint
+from .openset_centerpointv2 import Openset_CenterPointV2
+from .openset_centerpointv3 import Openset_CenterPointV3
 from .openset_centerpoint_test import Openset_CenterPoint_test
 from .openset_centerpoint_recon_clip import Openset_CenterPoint_Recon_clip
+from .openset_centerpoint_recon_clip_bev import Openset_CenterPoint_Recon_clip_BEV
 from .pv_rcnn_plusplus import PVRCNNPlusPlus
 from .mppnet import MPPNet
 from .mppnet_e2e import MPPNetE2E
@@ -31,8 +34,11 @@ __all__ = {
     'VoxelRCNN': VoxelRCNN,
     'CenterPoint': CenterPoint,
     'Openset_CenterPoint':Openset_CenterPoint,
+    'Openset_CenterPointV2':Openset_CenterPointV2,
+    "Openset_CenterPointV3":Openset_CenterPointV3,
     'Openset_CenterPoint_test':Openset_CenterPoint_test,
     "Openset_CenterPoint_Recon_clip":Openset_CenterPoint_Recon_clip,
+    "Openset_CenterPoint_Recon_clip_BEV":Openset_CenterPoint_Recon_clip_BEV,
     'PillarNet': PillarNet,
     'PVRCNNPlusPlus': PVRCNNPlusPlus,
     'MPPNet': MPPNet,
