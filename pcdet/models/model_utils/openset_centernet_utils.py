@@ -172,26 +172,61 @@ def _topk(scores, K=40):
 
 def decode_bbox_from_heatmap(heatmap, rot_cos, rot_sin, center, center_z, dim,
                              point_cloud_range=None, voxel_size=None, feature_map_stride=None, vel=None, iou=None, K=100,
-                             circle_nms=False, score_thresh=None, post_center_limit_range=None, openset_voxel_indices=None ):
+                             circle_nms=False, score_thresh=None, post_center_limit_range=None, clip=None, decoder=None, text_feat=None):
     batch_size, num_class, _, _ = heatmap.size()
 
     if circle_nms:
         # TODO: not checked yet
         assert False, 'not checked yet'
         heatmap = _nms(heatmap)
-        
-        
-    ###########################################################################    
-    if openset_voxel_indices is not None:   
-        heatmap[0, 0, openset_voxel_indices[:,1].long(),openset_voxel_indices[:,0].long()] = 1 #### bus detection
-    ###########################################################################
-    
+
     scores, inds, class_ids, ys, xs = _topk(heatmap, K=K)
     center = _transpose_and_gather_feat(center, inds).view(batch_size, K, 2)
     rot_sin = _transpose_and_gather_feat(rot_sin, inds).view(batch_size, K, 1)
     rot_cos = _transpose_and_gather_feat(rot_cos, inds).view(batch_size, K, 1)
     center_z = _transpose_and_gather_feat(center_z, inds).view(batch_size, K, 1)
     dim = _transpose_and_gather_feat(dim, inds).view(batch_size, K, 3)
+    
+    if clip is not None:
+        
+        # N, C, H, W = clip.shape
+        # flatten_clip = clip[0].contiguous().flatten(1).contiguous().permute(1,0)
+        # decoded_faltten_clip = decoder(flatten_clip)
+        # decoded_faltten_clip_norm = (decoded_faltten_clip/(decoded_faltten_clip.norm(dim=1, keepdim=True)+1e-5)).half()
+        
+        
+        
+        
+        clip_K = _transpose_and_gather_feat(clip, inds).view(batch_size, K, 16)
+        decoded_clip_K = decoder(clip_K).squeeze()
+        decoded_clip_K_norm = (decoded_clip_K / (decoded_clip_K.norm(dim=1, keepdim=True)+1e-5)).half()
+        class_preds = (text_feat @ decoded_clip_K_norm.T)
+        max_score, max_indices = torch.max(class_preds, dim=0)
+        max_indices_np = max_indices.cpu().detach().numpy()
+        class_indices_1 = np.where(max_indices_np == 0)[0] # car
+        class_indices_2 = np.where(max_indices_np == 1)[0] # truck
+        class_indices_3 = np.where(max_indices_np == 2)[0] # construction_vehicle
+        class_indices_4 = np.where(max_indices_np == 3)[0] # bus
+        class_indices_5 = np.where(max_indices_np == 4)[0] # trailer
+        class_indices_6 = np.where(max_indices_np == 5)[0] # barrier
+        class_indices_7 = np.where(max_indices_np == 6)[0] # motorcycle
+        class_indices_8 = np.where(max_indices_np == 7)[0] # bicycle
+        class_indices_9 = np.where(max_indices_np == 8)[0] # pedestrian
+        class_indices_10 = np.where(max_indices_np == 9)[0] # traffic_cone
+        class_ids[:,class_indices_1]  = 1 #car
+        class_ids[:,class_indices_2]  = 2 #truck
+        class_ids[:,class_indices_3]  = 3 # construction_vehicle
+        class_ids[:,class_indices_4]  = 4 # bus
+        class_ids[:,class_indices_5]  = 5 # trailer
+        class_ids[:,class_indices_6]  = 6 # barrier
+        class_ids[:,class_indices_7]  = 7 # motorcycle
+        class_ids[:,class_indices_8]  = 8 # bicycle
+        class_ids[:,class_indices_9]  = 9 # pedestrian
+        class_ids[:,class_indices_10]  = 10 # traffic_cone
+        # score_masked_indices = (max_score>0.08).nonzero(as_tuple=True)[0]
+        
+        
+    
 
     angle = torch.atan2(rot_sin, rot_cos)
     xs = xs.view(batch_size, K, 1) + center[:, :, 0:1]
@@ -220,6 +255,8 @@ def decode_bbox_from_heatmap(heatmap, rot_cos, rot_sin, center, center_z, dim,
         mask &= (final_scores > score_thresh)
 
     ret_pred_dicts = []
+
+    
     for k in range(batch_size):
         cur_mask = mask[k]
         cur_boxes = final_box_preds[k, cur_mask]

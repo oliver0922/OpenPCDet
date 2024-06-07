@@ -1,7 +1,7 @@
 import torch
 
 # Weight 파일 경로
-weight_path1 = '/home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train/default/ckpt/checkpoint_epoch_523.pth'
+weight_path1 = '/home/OpenPCDet/output/cfgs/hyundai/exp1/model/kitti_train_waymo_test/default/ckpt/checkpoint_epoch_80.pth'
 weight_path2 = '/home/OpenPCDet/output/combined_weight_detection30_reconlatest.pth'
 
 # Weight 파일 로드

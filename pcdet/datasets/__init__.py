@@ -9,6 +9,7 @@ from .dataset import DatasetTemplate
 from .kitti.kitti_dataset import KittiDataset
 from .nuscenes.nuscenes_dataset import NuScenesDataset
 from .nuscenes.openset_nuscenes_dataset import Openset_NuScenesDataset
+from .kitti.openset_kitti_dataset import Openset_KittiDataset
 from .nuscenes.recon_openset_nuscenes_dataset import Recon_Openset_NuScenesDataset
 from .waymo.waymo_dataset import WaymoDataset
 from .pandaset.pandaset_dataset import PandasetDataset
@@ -20,6 +21,7 @@ from .custom.custom_dataset import CustomDataset
 __all__ = {
     'DatasetTemplate': DatasetTemplate,
     'KittiDataset': KittiDataset,
+    "Openset_KittiDataset":Openset_KittiDataset,
     'NuScenesDataset': NuScenesDataset,
     'WaymoDataset': WaymoDataset,
     'PandasetDataset': PandasetDataset,

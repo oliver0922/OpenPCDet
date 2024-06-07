@@ -35,167 +35,192 @@
         },
 
 
-        {
-            "name": "create_data",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/pcdet/datasets/nuscenes/openset_nuscenes_dataset.py",
-            "console": "integratedTerminal",
-            "justMyCode": false,
-            "args": [
-                "--func",
-                "create_nuscenes_infos",
-                "--cfg_file",
-                "tools/cfgs/dataset_configs/nuscenes_dataset_origin.yaml",
-                "--version",
-                "v1.0-trainval",
-                "--with_cam"
-            ],
-        },
+        // {
+        //     "name": "create_data",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/pcdet/datasets/nuscenes/openset_nuscenes_dataset.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": false,
+        //     "args": [
+        //         "--func",
+        //         "create_nuscenes_infos",
+        //         "--cfg_file",
+        //         "tools/cfgs/dataset_configs/nuscenes_dataset_origin.yaml",
+        //         "--version",
+        //         "v1.0-trainval",
+        //         "--with_cam"
+        //     ],
+        // },
 
-        {
-            "name": "centerpt-nuscenes-train",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/train.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "/home/OpenPCDet/tools/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline_b16.yaml"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "4"
-            }
-        },
-        {
-            "name": "centerpt-nuscenes-test",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/test.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "/home/OpenPCDet/tools/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline.yaml",
-                "--batch_size",
-                "1",
-                "--ckpt",
-                "/home/OpenPCDet/output/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline/default/ckpt/checkpoint_epoch_30.pth"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "4"
-            }
-        },
-
-
-
-        {
-            "name": "openset_centerpt-nuscenes-train",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/train.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "./cfgs/openset/train/centerpoint-nuscenes.yaml"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "2",
-                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
-            },
-            "cwd": "/home/OpenPCDet/tools"
-        },
-        {
-            "name": "openset_centerpt-nuscenes-detection-train-clip-freeze",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/train.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "./cfgs/openset/centerpoint-nuscenes_detection_train_clip_freeze.yaml",
-                // "--pretrained_model",
-                // "/home/OpenPCDet/output/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline_b16/default/ckpt/checkpoint_epoch_30.pth"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "2",
-                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
-            },
-            "cwd": "/home/OpenPCDet/tools"
-        },
+        // {
+        //     "name": "centerpt-nuscenes-train",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/train.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "/home/OpenPCDet/tools/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline_b16.yaml"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "4"
+        //     }
+        // },
+        // {
+        //     "name": "centerpt-nuscenes-test",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/test.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "/home/OpenPCDet/tools/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline.yaml",
+        //         "--batch_size",
+        //         "1",
+        //         "--ckpt",
+        //         "/home/OpenPCDet/output/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline/default/ckpt/checkpoint_epoch_30.pth"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "4"
+        //     }
+        // },
 
 
 
-        {
-            "name": "openset_centerpt-nuscenes-detection-train-clip-freeze-test",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/test.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "./cfgs/openset/centerpoint-nuscenes_detection_train_clip_freeze.yaml",
-                "--batch_size",
-                "1",
-                "--ckpt",
-                "/home/OpenPCDet/output/cfgs/openset/train/centerpoint-nuscenes_detection_train_clip_freeze/default/ckpt/checkpoint_epoch_30.pth"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "0",
-                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
-            },
-            "cwd": "/home/OpenPCDet/tools"
-        },
+        // {
+        //     "name": "openset_centerpt-nuscenes-train",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/train.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/openset/train/centerpoint-nuscenes.yaml"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "2",
+        //         "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
+        // {
+        //     "name": "openset_centerpt-nuscenes-detection-train-clip-freeze",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/train.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/openset/centerpoint-nuscenes_detection_train_clip_freeze.yaml",
+        //         // "--pretrained_model",
+        //         // "/home/OpenPCDet/output/cfgs/nuscenes_models/voxel01_res3d_centerpoint_baseline_b16/default/ckpt/checkpoint_epoch_30.pth"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "2",
+        //         "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
 
 
 
-        {
-            "name": "openset_centerpt-nuscenes-detection-freeze-clip-train",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/train.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "./cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train_cos_mask.yaml",
-                "--pretrained_model",
-                "/home/OpenPCDet/output/combined_weight_detection30_reconlatest.pth",
-                // "--ckpt",
-                // "/home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train_l2_mask/default/ckpt/checkpoint_epoch_190.pth"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "2",
-                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
-            },
-            "cwd": "/home/OpenPCDet/tools"
-        },
+        // {
+        //     "name": "openset_centerpt-nuscenes-detection-train-clip-freeze-test",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/test.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/openset/centerpoint-nuscenes_detection_train_clip_freeze.yaml",
+        //         "--batch_size",
+        //         "1",
+        //         "--ckpt",
+        //         "/home/OpenPCDet/output/cfgs/openset/train/centerpoint-nuscenes_detection_train_clip_freeze/default/ckpt/checkpoint_epoch_30.pth"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "0",
+        //         "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
 
 
-        {
-            "name": "openset_centerpt-nuscenes-detection-freeze-clip-trainv2",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/train.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "./cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_trainv2.yaml",
-                "--pretrained_model",
-                "/home/OpenPCDet/output/combined_weight_detection30_reconlatest.pth"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "2",
-                "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
-            },
-            "cwd": "/home/OpenPCDet/tools"
-        },     
 
+        // {
+        //     "name": "openset_centerpt-nuscenes-detection-freeze-clip-train",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/train.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train.yaml",
+        //         "--pretrained_model",
+        //         "/home/OpenPCDet/output/combined_weight_detection30_reconlatest.pth",
+        //         "--ckpt",
+        //         "/home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train_full/default/ckpt/checkpoint_epoch_5.pth"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "2",
+        //         "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
+
+
+        // {
+        //     "name": "openset_centerpt-nuscenes-detection-freeze-clip-trainv2",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/train.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_trainv2.yaml",
+        //         "--pretrained_model",
+        //         "/home/OpenPCDet/output/combined_weight_detection30_reconlatest.pth"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "2",
+        //         "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },     
+
+        // {
+        //     "name": "openset_centerpt-nuscenes-detection-freeze-clip-freeze",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/test.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train_full.yaml",
+        //         // "--pretrained_model",
+        //         // "/home/OpenPCDet/output/combined_weight_detection30_reconlatest.pth",
+        //         "--batch_size",
+        //         "1",
+        //         "--ckpt",
+        //         "/home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes_detection_freeze_clip_train_full/default/ckpt/checkpoint_epoch_5.pth",
+        //         "--vis",
+        //         "True"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "2",
+        //         "PYDEVD_CONTAINER_RANDOM_ACCESS_MAX_ITEMS": "1000"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
 
 
 
@@ -253,6 +278,75 @@
                 "--batch_size",
                 "1",
                 "--eval_all"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+
+        {
+            "name": "waymo",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "/home/OpenPCDet/tools/cfgs/waymo_models/centerpoint.yaml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+        {
+            "name": "kitti-train-waymo-test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/hyundai/exp1/model/kitti_train_waymo_test.yaml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+        {
+            "name": "kitti-train-waymo-test-test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/hyundai/exp1/model/kitti_train_waymo_test_deeper_aug.yaml",
+                "--batch_size",
+                "1",
+                "--ckpt",
+                "/home/OpenPCDet/output/cfgs/hyundai/exp1/model/kitti_train_waymo_test_deeper_aug/default/ckpt/checkpoint_epoch_80.pth"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+        {
+            "name": "openset-kitti-train-waymo-test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/hyundai/exp1/model/openset_kitti_train_waymo_test.yaml",
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "1"

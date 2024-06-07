@@ -7,17 +7,20 @@ data
 venv/
 *.idea/
 *.so
-*.yaml
 *.sh
 *.pth
 *.pkl
 *.zip
 *.bin
+*.pt
 output
 version.py
+visualization
+
 
 /home/OpenPCDet/data
 /home/OpenPCDet/output
 /home/OpenPCDet/visualization
+/home/OpenPCDet/data_for_vis
 
 

@@ -4,11 +4,24 @@ Written by Jihan YANG
 All rights preserved from 2021 - present.
 """
 import open3d
+import open3d as o3d
 import torch
 import matplotlib
 import numpy as np
 
 box_colormap = [
+    [1, 1, 1],
+    [0, 1, 0],
+    [0, 1, 1],
+    [1, 1, 0],
+    [1, 1, 1],
+    [0, 1, 0],
+    [0, 1, 1],
+    [1, 1, 0],
+    [1, 1, 1],
+    [0, 1, 0],
+    [0, 1, 1],
+    [1, 1, 0],
     [1, 1, 1],
     [0, 1, 0],
     [0, 1, 1],
@@ -70,9 +83,13 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
         vis = draw_box(vis, ref_boxes, (0, 1, 0), ref_labels, ref_scores)
 
     vis.run()
+    # vis.destroy_window()
+    vis.poll_events()
+    vis.update_renderer()
+    vis.capture_screen_image('/home/OpenPCDet/visualization/prediction/boundingbox/output.png')  # Save the rendered image
     vis.destroy_window()
 
-
+    
 def translate_boxes_to_open3d_instance(gt_boxes):
     """
              4-------- 6
@@ -114,3 +131,5 @@ def draw_box(vis, gt_boxes, color=(0, 1, 0), ref_labels=None, score=None):
         #     corners = box3d.get_box_points()
         #     vis.add_3d_label(corners[5], '%.2f' % score[i])
     return vis
+
+

@@ -10,13 +10,13 @@ from pcdet.utils import common_utils
 
 
 
-# import open3d
-# from tools.visual_utils import open3d_vis_utils
-# OPEN3D_FLAG = True
+import open3d
+from tools.visual_utils import open3d_vis_utils as V
+OPEN3D_FLAG = True
 # except:
-import mayavi.mlab as mlab
-from tools.visual_utils import visualize_utils as V
-OPEN3D_FLAG = False
+# import mayavi.mlab as mlab
+# from tools.visual_utils import visualize_utils as V
+# OPEN3D_FLAG = False
 
 def statistics_info(cfg, ret_dict, metric, disp_dict):
     for cur_thresh in cfg.MODEL.POST_PROCESSING.RECALL_THRESH_LIST:
@@ -78,14 +78,32 @@ def eval_one_epoch(cfg, args, model, dataloader, epoch_id, logger, dist_test=Fal
 
         #################### visualization ########################
         
-        V.draw_scenes(
-                points=batch_dict['points'][:, 1:], ref_boxes=pred_dicts[0]['pred_boxes'],
-                ref_scores=pred_dicts[0]['pred_scores'], ref_labels=pred_dicts[0]['pred_labels']
-            )
+        # if args.vis == 'True':
+        # points = batch_dict['points'][:, 1:]
+        # ref_boxes = pred_dicts[0]['pred_boxes']
+        # ref_scores = pred_dicts[0]['pred_scores']
+        # ref_labels = pred_dicts[0]['pred_labels']
+        # gt_boxes = batch_dict['gt_boxes'][0] #waymo
+        # gt_labels =  batch_dict['gt_boxes'][0] #waymo
+        # # gt_boxes = batch_dict['gt_boxes'][0][:,:9] #nuscenes
+        # # gt_labels =  batch_dict['gt_boxes'][0][:,9] #nuscenes
 
-        if not OPEN3D_FLAG:
-                mlab.show(stop=True)
         
+        # torch.save(points, '/home/OpenPCDet/data_for_vis/kitti_train_waymo_test/points.pt')
+        # torch.save(ref_boxes, '/home/OpenPCDet/data_for_vis/kitti_train_waymo_test/ref_boxes.pt')
+        # torch.save(ref_scores, '/home/OpenPCDet/data_for_vis/kitti_train_waymo_test/ref_scores.pt')
+        # torch.save(ref_labels,'/home/OpenPCDet/data_for_vis/kitti_train_waymo_test/ref_labels.pt')
+        # torch.save(gt_boxes,'/home/OpenPCDet/data_for_vis/kitti_train_waymo_test/gt_boxes.pt')
+        # torch.save(gt_labels,'/home/OpenPCDet/data_for_vis/kitti_train_waymo_test/gt_labels.pt')
+            
+            
+            
+        #     V.draw_scenes(
+        #             points=batch_dict['points'][:, 1:], ref_boxes=pred_dicts[0]['pred_boxes'],
+        #             ref_scores=pred_dicts[0]['pred_scores'], ref_labels=pred_dicts[0]['pred_labels']
+        #         )
+
+            
         
         ###########################################################
 

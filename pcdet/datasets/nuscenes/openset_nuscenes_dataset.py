@@ -324,7 +324,7 @@ class Openset_NuScenesDataset(DatasetTemplate):
             'metadata': {'token': info['token']}
         }
         
-        if self.training and self.dataset_cfg.TRAIN_CLIP:
+        if self.training and self.dataset_cfg.TRAIN_CLIP:###################### modified
             data_dict = self.open_seg_data(info)
             input_dict.update(data_dict)
 
