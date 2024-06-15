@@ -155,7 +155,6 @@ class Openset_CenterHead(nn.Module):
             )).cuda()
             self.class_id_mapping_each_head.append(cur_class_id_mapping)
             
-        self.class_id_mapping_each_head[6] = torch.tensor(range(10,21),device='cuda') ############ modified
         total_classes = sum([len(x) for x in self.class_names_each_head])
         assert total_classes == len(self.class_names), f'class_names_each_head={self.class_names_each_head}'
 
@@ -174,7 +173,7 @@ class Openset_CenterHead(nn.Module):
         for idx, cur_class_names in enumerate(self.class_names_each_head):
             cur_head_dict = copy.deepcopy(self.separate_head_cfg.HEAD_DICT)
             cur_head_dict['hm'] = dict(out_channels=len(cur_class_names), num_conv=self.model_cfg.NUM_HM_CONV)
-            if idx != 6: #for class specific head
+            if 'objectness' not in cur_class_names: #for class specific head
                 self.heads_list.append(
                     SeparateHead(
                         input_channels=self.model_cfg.SHARED_CONV_CHANNEL,
@@ -209,7 +208,7 @@ class Openset_CenterHead(nn.Module):
 
     def assign_target_of_single_head(
             self, num_classes, gt_boxes, feature_map_size, feature_map_stride, num_max_objs=500,
-            gaussian_overlap=0.1, min_radius=2
+            gaussian_overlap=0.1, min_radius=2, frame_id = None
     ):
         """
         Args:
@@ -257,16 +256,19 @@ class Openset_CenterHead(nn.Module):
 
             ret_boxes[k, 0:2] = center[k] - center_int_float[k].float() #### center(x,y) offset 
             ret_boxes[k, 2] = z[k]
-            ret_boxes[k, 3:6] = gt_boxes[k, 3:6].log()
+            ret_boxes[k, 3:6] = gt_boxes[k, 3:6].log()            
             ret_boxes[k, 6] = torch.cos(gt_boxes[k, 6])
             ret_boxes[k, 7] = torch.sin(gt_boxes[k, 6])
+            
+            if torch.isnan(ret_boxes).any():
+                print("1")
             if gt_boxes.shape[1] > 8: 
                 ret_boxes[k, 8:] = gt_boxes[k, 7:-1]
 
         return heatmap, ret_boxes, inds, mask, ret_boxes_src 
     ### ret_boxes (#num_max object, 10) -> voxel coordinate (x offset, y offset, z, w,l, h(log scale), cos, sin, velocity x velocity y )
 
-    def assign_targets(self, gt_boxes, feature_map_size=None, **kwargs):
+    def assign_targets(self,frame_id, gt_boxes, feature_map_size=None, **kwargs):
         """
         Args:
             gt_boxes: (B, M, 8)
@@ -278,7 +280,7 @@ class Openset_CenterHead(nn.Module):
         """
         feature_map_size = feature_map_size[::-1]  # [H, W] ==> [x, y]
         target_assigner_cfg = self.model_cfg.TARGET_ASSIGNER_CONFIG
-        # feature_map_size = self.grid_size[:2] // target_assigner_cfg.FEATURE_MAP_STRIDE
+        # feature_map_size = self.grid_size[:2] // target_assigner_cfg.FEATURE_MAP_STRIDEC
 
         batch_size = gt_boxes.shape[0]
         ret_dict = {
@@ -291,7 +293,7 @@ class Openset_CenterHead(nn.Module):
         }
 
         all_names = np.array(['bg', *self.class_names]) # 
-        for idx, cur_class_names in enumerate(self.class_names_each_head):
+        for class_names_each_head_idx, cur_class_names in enumerate(self.class_names_each_head):
             heatmap_list, target_boxes_list, inds_list, masks_list, target_boxes_src_list = [], [], [], [], []
             for bs_idx in range(batch_size):
                 cur_gt_boxes = gt_boxes[bs_idx]  # gt_boxes =  B, # gt, (x,y,z,w,l,h,rotation , velocity)
@@ -320,6 +322,7 @@ class Openset_CenterHead(nn.Module):
                     num_max_objs=target_assigner_cfg.NUM_MAX_OBJS,
                     gaussian_overlap=target_assigner_cfg.GAUSSIAN_OVERLAP,
                     min_radius=target_assigner_cfg.MIN_RADIUS,
+                    frame_id = frame_id
                 ) 
                 heatmap_list.append(heatmap.to(gt_boxes_single_head.device)) # batch 단위
                 target_boxes_list.append(ret_boxes.to(gt_boxes_single_head.device))
@@ -400,6 +403,8 @@ class Openset_CenterHead(nn.Module):
 
 
         tb_dict['rpn_loss'] = loss.item()
+        if torch.isnan(loss):
+            print("Loss is NaN")
         return loss, tb_dict
 
     def generate_predicted_boxes(self, batch_size, pred_dicts, decoder=None, text_feat=None):
@@ -506,6 +511,7 @@ class Openset_CenterHead(nn.Module):
 
         if self.training:
             target_dict = self.assign_targets(
+                data_dict['frame_id'],
                 data_dict['gt_boxes'], feature_map_size=spatial_features_2d.size()[2:],
                 feature_map_stride=data_dict.get('spatial_features_2d_strides', None)
             )
@@ -513,7 +519,7 @@ class Openset_CenterHead(nn.Module):
 
         self.forward_ret_dict['pred_dicts'] = pred_dicts
         if data_dict['clip_train']:
-            data_dict['preds_clip_bev_features'] = pred_dicts[6]['clip']
+            data_dict['preds_clip_bev_features'] = pred_dicts[-1]['clip']
 
         if not self.training or self.predict_boxes_when_training:
             pred_dicts = self.generate_predicted_boxes(

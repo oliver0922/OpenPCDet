@@ -57,11 +57,18 @@ class DataAugmentor(object):
         if data_dict is None:
             return partial(self.random_world_flip, config=config)
         gt_boxes, points = data_dict['gt_boxes'], data_dict['points']
+        if 'clip_train' in data_dict.keys() and data_dict['clip_train'] == True:
+            clip = data_dict['clip']
+        
         for cur_axis in config['ALONG_AXIS_LIST']:
             assert cur_axis in ['x', 'y']
-            gt_boxes, points, enable = getattr(augmentor_utils, 'random_flip_along_%s' % cur_axis)(
-                gt_boxes, points, return_flip=True
-            )
+            if 'clip_train' in data_dict.keys() and data_dict['clip_train'] == True:
+                gt_boxes, points, enable, clip = getattr(augmentor_utils, 'random_flip_along_%s' % cur_axis)(
+                    gt_boxes, points, return_flip=True, clip=clip
+                )
+            else:
+                gt_boxes, points, enable = getattr(augmentor_utils, 'random_flip_along_%s' % cur_axis)(
+                    gt_boxes, points, return_flip=True)              
             data_dict['flip_%s'%cur_axis] = enable
             if 'roi_boxes' in data_dict.keys():
                 num_frame, num_rois,dim = data_dict['roi_boxes'].shape
@@ -72,6 +79,8 @@ class DataAugmentor(object):
 
         data_dict['gt_boxes'] = gt_boxes
         data_dict['points'] = points
+        if 'clip_train' in data_dict.keys() and data_dict['clip_train'] == True:
+            data_dict['clip'] = clip
         return data_dict
 
     def random_world_rotation(self, data_dict=None, config=None):
@@ -80,9 +89,14 @@ class DataAugmentor(object):
         rot_range = config['WORLD_ROT_ANGLE']
         if not isinstance(rot_range, list):
             rot_range = [-rot_range, rot_range]
-        gt_boxes, points, noise_rot = augmentor_utils.global_rotation(
-            data_dict['gt_boxes'], data_dict['points'], rot_range=rot_range, return_rot=True
-        )
+        if 'clip_train' in data_dict.keys() and data_dict['clip_train'] == True:
+            gt_boxes, points, noise_rot, clip = augmentor_utils.global_rotation(
+                data_dict['gt_boxes'], data_dict['points'], rot_range=rot_range, return_rot=True, clip = data_dict['clip']
+            )
+        else:
+             gt_boxes, points, noise_rot = augmentor_utils.global_rotation(
+                data_dict['gt_boxes'], data_dict['points'], rot_range=rot_range, return_rot=True, clip = data_dict['clip']
+            )           
         if 'roi_boxes' in data_dict.keys():
             num_frame, num_rois,dim = data_dict['roi_boxes'].shape
             roi_boxes, _, _ = augmentor_utils.global_rotation(
@@ -92,6 +106,8 @@ class DataAugmentor(object):
         data_dict['gt_boxes'] = gt_boxes
         data_dict['points'] = points
         data_dict['noise_rot'] = noise_rot
+        if 'clip_train' in data_dict.keys() and data_dict['clip_train'] == True:
+            data_dict['clip'] = clip
         return data_dict
 
     def random_world_scaling(self, data_dict=None, config=None):
@@ -99,18 +115,25 @@ class DataAugmentor(object):
             return partial(self.random_world_scaling, config=config)
         
         if 'roi_boxes' in data_dict.keys():
-            gt_boxes, roi_boxes, points, noise_scale = augmentor_utils.global_scaling_with_roi_boxes(
+            gt_boxes, roi_boxes, points, noise_scal= augmentor_utils.global_scaling_with_roi_boxes(
                 data_dict['gt_boxes'], data_dict['roi_boxes'], data_dict['points'], config['WORLD_SCALE_RANGE'], return_scale=True
             )
             data_dict['roi_boxes'] = roi_boxes
         else:
-            gt_boxes, points, noise_scale = augmentor_utils.global_scaling(
-                data_dict['gt_boxes'], data_dict['points'], config['WORLD_SCALE_RANGE'], return_scale=True
-            )
+            if 'clip_train' in data_dict.keys() and data_dict['clip_train'] == True:
+                gt_boxes, points, noise_scale, clip = augmentor_utils.global_scaling(
+                    data_dict['gt_boxes'], data_dict['points'], config['WORLD_SCALE_RANGE'], return_scale=True, clip=data_dict['clip']
+                )
+            else:
+                gt_boxes, points, noise_scale = augmentor_utils.global_scaling(
+                    data_dict['gt_boxes'], data_dict['points'], config['WORLD_SCALE_RANGE'], return_scale=True
+                )                
 
         data_dict['gt_boxes'] = gt_boxes
         data_dict['points'] = points
         data_dict['noise_scale'] = noise_scale
+        if 'clip_train' in data_dict.keys() and data_dict['clip_train'] == True:
+            data_dict['clip'] = clip
         return data_dict
 
     def random_image_flip(self, data_dict=None, config=None):

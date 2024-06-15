@@ -186,7 +186,7 @@ class Openset_CenterPoint_Recon_clip(Detector3DTemplate):
             clip_rotated_feature = torch.flip(torch.transpose(clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
             plt.clf()         
             plt.imshow(clip_rotated_feature)
-            plt.savefig("/home/OpenPCDet/visualization/prediction/with_bg_prediction_original.png",dpi=300, bbox_inches='tight')
+            plt.savefig("/home/OpenPCDet/visualization/prediction/kitti/origin/with_bg_prediction_original.png",dpi=300, bbox_inches='tight')
             plt.axis('off')
             plt.clf() 
             plt.close('all')
@@ -213,21 +213,21 @@ class Openset_CenterPoint_Recon_clip(Detector3DTemplate):
             recon_clip_rotated_feature = torch.flip(torch.transpose(recon_clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
             plt.clf()         
             plt.imshow(recon_clip_rotated_feature)
-            plt.savefig("/home/OpenPCDet/visualization/prediction/with_bg_prediction_reconstruction.png",dpi=300, bbox_inches='tight')
+            plt.savefig("/home/OpenPCDet/visualization/prediction/kitti/recon/with_bg_prediction_reconstruction.png",dpi=300, bbox_inches='tight')
             plt.axis('off')
             plt.clf() 
             plt.close('all')
  
  
  
-            self.nusc = NuScenes(version='v1.0-trainval', dataroot='/home/OpenPCDet/data/nuscenes/v1.0-trainval', verbose=True)
+            # self.nusc = NuScenes(version='v1.0-trainval', dataroot='/home/OpenPCDet/data/nuscenes/v1.0-trainval', verbose=True)
 
-            token_id = batch_dict['metadata'][0]['token']
-            my_sample = self.nusc.get('sample', token_id)
-            self.nusc.render_sample_data(my_sample['data']['LIDAR_TOP'], nsweeps=1, underlay_map=True, show_lidarseg=True,
-                            show_lidarseg_legend=True, out_path='/home/OpenPCDet/visualization/groundtruth/gt.jpg')
-            plt.close('all')
-            plt.clf()
+            # token_id = batch_dict['metadata'][0]['token']
+            # my_sample = self.nusc.get('sample', token_id)
+            # self.nusc.render_sample_data(my_sample['data']['LIDAR_TOP'], nsweeps=1, underlay_map=True, show_lidarseg=True,
+            #                 show_lidarseg_legend=True, out_path='/home/OpenPCDet/visualization/groundtruth/gt.jpg')
+            # plt.close('all')
+            # plt.clf()
  
             handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color_map[obj], markersize=8) for obj in color_map_list]
             labels = list(color_map.keys())

@@ -109,8 +109,8 @@ class CenterHead(nn.Module):
     ):
         """
         Args:
-            gt_boxes: (N, 10)
-            feature_map_size: (2), [128, 128]
+            gt_boxes: (N, 8)
+            feature_map_size: (2), [x, y]
 
         Returns:
 
@@ -121,7 +121,7 @@ class CenterHead(nn.Module):
         mask = gt_boxes.new_zeros(num_max_objs).long()
         ret_boxes_src = gt_boxes.new_zeros(num_max_objs, gt_boxes.shape[-1])
         ret_boxes_src[:gt_boxes.shape[0]] = gt_boxes
-        # transform ego coordinate to voxel coordinate
+
         x, y, z = gt_boxes[:, 0], gt_boxes[:, 1], gt_boxes[:, 2]
         coord_x = (x - self.point_cloud_range[0]) / self.voxel_size[0] / feature_map_stride
         coord_y = (y - self.point_cloud_range[1]) / self.voxel_size[1] / feature_map_stride
@@ -149,18 +149,17 @@ class CenterHead(nn.Module):
             centernet_utils.draw_gaussian_to_heatmap(heatmap[cur_class_id], center[k], radius[k].item())
 
             inds[k] = center_int[k, 1] * feature_map_size[0] + center_int[k, 0]
-            mask[k] = 1 ##### -> indicate whter there is object or not
+            mask[k] = 1
 
-            ret_boxes[k, 0:2] = center[k] - center_int_float[k].float() #### center(x,y) offset 
+            ret_boxes[k, 0:2] = center[k] - center_int_float[k].float()
             ret_boxes[k, 2] = z[k]
             ret_boxes[k, 3:6] = gt_boxes[k, 3:6].log()
             ret_boxes[k, 6] = torch.cos(gt_boxes[k, 6])
             ret_boxes[k, 7] = torch.sin(gt_boxes[k, 6])
-            if gt_boxes.shape[1] > 8: 
+            if gt_boxes.shape[1] > 8:
                 ret_boxes[k, 8:] = gt_boxes[k, 7:-1]
 
-        return heatmap, ret_boxes, inds, mask, ret_boxes_src 
-    ### ret_boxes (#num_max object, 10) -> voxel coordinate (x offset, y offset, z, w,l, h(log scale), cos, sin, velocity x velocity y )
+        return heatmap, ret_boxes, inds, mask, ret_boxes_src
 
     def assign_targets(self, gt_boxes, feature_map_size=None, **kwargs):
         """
@@ -186,19 +185,16 @@ class CenterHead(nn.Module):
             'target_boxes_src': [],
         }
 
-        all_names = np.array(['bg', *self.class_names]) # 
+        all_names = np.array(['bg', *self.class_names])
         for idx, cur_class_names in enumerate(self.class_names_each_head):
             heatmap_list, target_boxes_list, inds_list, masks_list, target_boxes_src_list = [], [], [], [], []
             for bs_idx in range(batch_size):
-                cur_gt_boxes = gt_boxes[bs_idx]  # gt_boxes =  B, # gt, (x,y,z,w,l,h,rotation , velocity)
+                cur_gt_boxes = gt_boxes[bs_idx]
                 gt_class_names = all_names[cur_gt_boxes[:, -1].cpu().long().numpy()]
 
                 gt_boxes_single_head = []
-                
-                # if 'pedestrian' in gt_class_names and 'traffic_cone' in gt_class_names:
-                #     print("1")
 
-                for idx, name in enumerate(gt_class_names): # gt_class_names -> gt_class name
+                for idx, name in enumerate(gt_class_names):
                     if name not in cur_class_names:
                         continue
                     temp_box = cur_gt_boxes[idx]
@@ -216,15 +212,15 @@ class CenterHead(nn.Module):
                     num_max_objs=target_assigner_cfg.NUM_MAX_OBJS,
                     gaussian_overlap=target_assigner_cfg.GAUSSIAN_OVERLAP,
                     min_radius=target_assigner_cfg.MIN_RADIUS,
-                ) 
-                heatmap_list.append(heatmap.to(gt_boxes_single_head.device)) # batch 단위
+                )
+                heatmap_list.append(heatmap.to(gt_boxes_single_head.device))
                 target_boxes_list.append(ret_boxes.to(gt_boxes_single_head.device))
                 inds_list.append(inds.to(gt_boxes_single_head.device))
                 masks_list.append(mask.to(gt_boxes_single_head.device))
                 target_boxes_src_list.append(ret_boxes_src.to(gt_boxes_single_head.device))
 
             ret_dict['heatmaps'].append(torch.stack(heatmap_list, dim=0))
-            ret_dict['target_boxes'].append(torch.stack(target_boxes_list, dim=0)) # 6개(['car'], ['truck', 'construction_vehicle'],...) 각각 (max num_object, 10(voxelcoordinate 정보))
+            ret_dict['target_boxes'].append(torch.stack(target_boxes_list, dim=0))
             ret_dict['inds'].append(torch.stack(inds_list, dim=0))
             ret_dict['masks'].append(torch.stack(masks_list, dim=0))
             ret_dict['target_boxes_src'].append(torch.stack(target_boxes_src_list, dim=0))

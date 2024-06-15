@@ -30,7 +30,8 @@ class MeanVFE(VFETemplate):
         
         if "clip_voxels" in batch_dict.keys():
             clip_voxel_features, clip_voxel_num_points = batch_dict['clip_voxels'], batch_dict['clip_voxel_num_points']
-            clip_voxel_features = clip_voxel_features[:,:,5:]
+            lidar_feature_dim = 4 if batch_dict['db_flag'] == 'KITTI' else 5
+            clip_voxel_features = clip_voxel_features[:,:,lidar_feature_dim:] ########### if else문 사용해야함
             clip_points_mean = clip_voxel_features[:, :, :].sum(dim=1, keepdim=False)
             clip_normalizer = torch.clamp_min(clip_voxel_num_points.view(-1, 1), min=1.0).type_as(clip_voxel_features)
             clip_points_mean = clip_points_mean / clip_normalizer

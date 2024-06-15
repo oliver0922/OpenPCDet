@@ -4,13 +4,13 @@ import pickle
 import numpy as np
 from skimage import io
 
-from . import kitti_utils
-from ...ops.roiaware_pool3d import roiaware_pool3d_utils
-from ...utils import box_utils, calibration_kitti, common_utils, object3d_kitti
-from ..dataset import DatasetTemplate
+from pcdet.datasets.kitti import kitti_utils
+from pcdet.ops.roiaware_pool3d import roiaware_pool3d_utils
+from pcdet.utils import box_utils, calibration_kitti, common_utils, object3d_kitti
+from pcdet.datasets.dataset import DatasetTemplate
 
 
-class Openset_KittiDataset(DatasetTemplate):
+class KittiDatasetV2(DatasetTemplate):
     def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None):
         """
         Args:
@@ -29,11 +29,9 @@ class Openset_KittiDataset(DatasetTemplate):
         split_dir = self.root_path / 'ImageSets' / (self.split + '.txt')
         self.sample_id_list = [x.strip() for x in open(split_dir).readlines()] if split_dir.exists() else None
 
-        
         if 'TRAIN_VAL_COMBINATION' in self.dataset_cfg.keys():
             self.sample_id_list =  [f'{i:06}' for i in range(7481)]
 
-        
         self.kitti_infos = []
         self.include_kitti_data(self.mode)
 
@@ -188,7 +186,9 @@ class Openset_KittiDataset(DatasetTemplate):
                 annotations['score'] = np.array([obj.score for obj in obj_list])
                 annotations['difficulty'] = np.array([obj.level for obj in obj_list], np.int32)
 
-                num_objects = len([obj.cls_type for obj in obj_list if obj.cls_type != 'DontCare'])
+                # num_objects = len([obj.cls_type for obj in obj_list if obj.cls_type != 'DontCare'])
+                num_objects = len([obj.cls_type for obj in obj_list])
+                
                 num_gt = len(annotations['name'])
                 index = list(range(num_objects)) + [-1] * (num_gt - num_objects)
                 annotations['index'] = np.array(index, dtype=np.int32)
@@ -230,7 +230,7 @@ class Openset_KittiDataset(DatasetTemplate):
         import torch
 
         database_save_path = Path(self.root_path) / ('gt_database' if split == 'train' else ('gt_database_%s' % split))
-        db_info_save_path = Path(self.root_path) / ('kitti_dbinfos_%s.pkl' % split)
+        db_info_save_path = Path(self.root_path) / ('kitti_dbinfos_%s_8class.pkl' % split)
 
         database_save_path.mkdir(parents=True, exist_ok=True)
         all_db_infos = {}
@@ -380,23 +380,6 @@ class Openset_KittiDataset(DatasetTemplate):
 
         return len(self.kitti_infos)
 
-    
-    def get_clip(self, idx, points):
-        
-        clip_path = self.root_split_path / 'openseg'/('%s.npz' % idx)
-        clip_feature = np.load(clip_path)['feat']
-        entire_mask = np.load(clip_path)['mask_full'].astype(bool)
-
-        clip_feature = np.concatenate((points,clip_feature), axis=1)
-        # data_dict= {
-        #         "clip": clip_feature,
-        #         "mask": entire_mask,              
-        #         }
-        
-        
-        return clip_feature, entire_mask
-    
-    
     def __getitem__(self, index):
         # index = 4
         if self._merge_all_iters_to_one_epoch:
@@ -408,17 +391,14 @@ class Openset_KittiDataset(DatasetTemplate):
         img_shape = info['image']['image_shape']
         calib = self.get_calib(sample_idx)
         get_item_list = self.dataset_cfg.get('GET_ITEM_LIST', ['points'])
-        
 
         input_dict = {
             'frame_id': sample_idx,
             'calib': calib,
-            "db_flag": "KITTI"
         }
 
         if 'annos' in info:
             annos = info['annos']
-
             annos = common_utils.drop_info_with_name(annos, name='DontCare')
             loc, dims, rots = annos['location'], annos['dimensions'], annos['rotation_y']
             gt_names = annos['name']
@@ -441,31 +421,15 @@ class Openset_KittiDataset(DatasetTemplate):
 
         if "points" in get_item_list:
             points = self.get_lidar(sample_idx)
-            if 'clip' in self.dataset_cfg['GET_ITEM_LIST']:
-                clip_feature, entire_mask = self.get_clip(sample_idx, points)
             if self.dataset_cfg.FOV_POINTS_ONLY:
                 pts_rect = calib.lidar_to_rect(points[:, 0:3])
                 fov_flag = self.get_fov_flag(pts_rect, img_shape, calib)
                 points = points[fov_flag]
-                if 'clip' in self.dataset_cfg['GET_ITEM_LIST']:
-                    clip_feature = clip_feature[fov_flag]
-                    entire_mask = entire_mask[fov_flag]
             if self.dataset_cfg.get('SHIFT_COOR', None):
                 points[:, 0:3] += np.array(self.dataset_cfg.SHIFT_COOR, dtype=np.float32)
-                if 'clip' in self.dataset_cfg['GET_ITEM_LIST']:
-                    clip_feature[:, 0:3] += np.array(self.dataset_cfg.SHIFT_COOR, dtype=np.float32)
             input_dict['points'] = points
-            if 'clip' in self.dataset_cfg['GET_ITEM_LIST']:
-                input_dict['clip'] = clip_feature
-                input_dict['clip_mask'] = entire_mask
-                
-        if 'TRAIN_CLIP' in self.dataset_cfg:
-            input_dict['clip_train'] = self.dataset_cfg.TRAIN_CLIP    
 
-        if 'RECON' in self.dataset_cfg:
-            input_dict['recon'] = self.dataset_cfg.RECON 
-            
-        if "images" in get_item_list: 
+        if "images" in get_item_list: ######CLIP 이용할 때 이부분 추가
             input_dict['images'] = self.get_image(sample_idx)
 
         if "depth_maps" in get_item_list:
@@ -478,19 +442,17 @@ class Openset_KittiDataset(DatasetTemplate):
         data_dict = self.prepare_data(data_dict=input_dict)
 
         data_dict['image_shape'] = img_shape
-        
-        
         return data_dict
 
 
 def create_kitti_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
-    dataset = Openset_KittiDataset(dataset_cfg=dataset_cfg, class_names=class_names, root_path=data_path, training=False)
+    dataset = KittiDataset(dataset_cfg=dataset_cfg, class_names=class_names, root_path=data_path, training=False)
     train_split, val_split = 'train', 'val'
 
-    train_filename = save_path / ('kitti_infos_%s.pkl' % train_split)
-    val_filename = save_path / ('kitti_infos_%s.pkl' % val_split)
-    trainval_filename = save_path / 'kitti_infos_trainval.pkl'
-    test_filename = save_path / 'kitti_infos_test.pkl'
+    train_filename = save_path / ('kitti_infos_%s_8class.pkl' % train_split)
+    val_filename = save_path / ('kitti_infos_%s_8class.pkl' % val_split)
+    trainval_filename = save_path / 'kitti_infos_trainval_8class.pkl'
+    test_filename = save_path / 'kitti_infos_test_8class.pkl'
 
     print('---------------Start to generate data infos---------------')
 
@@ -525,7 +487,7 @@ def create_kitti_infos(dataset_cfg, class_names, data_path, save_path, workers=4
 
 if __name__ == '__main__':
     import sys
-    if sys.argv.__len__() > 1 and sys.argv[1] == 'create_kitti_infos':
+    if sys.argv.__len__() > 1 and sys.argv[1] == "create_kitti_infos":
         import yaml
         from pathlib import Path
         from easydict import EasyDict
@@ -533,7 +495,7 @@ if __name__ == '__main__':
         ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
         create_kitti_infos(
             dataset_cfg=dataset_cfg,
-            class_names=['Car', 'Pedestrian', 'Cyclist'],
+            class_names=['Car', 'Pedestrian', 'Cyclist','Van','Truck','Person_sitting','Tram'],
             data_path=ROOT_DIR / 'data' / 'kitti',
             save_path=ROOT_DIR / 'data' / 'kitti'
         )

@@ -5,22 +5,48 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "CLIP feature test",
+            "name": "openset_detection_train_clip_freeze",
             "type": "python",
             "request": "launch",
             "program": "/home/OpenPCDet/tools/train.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": [
+            "args":
+            [
                 "--cfg_file",
-                "/home/OpenPCDet/tools/cfgs/openset/clip_test.yaml",
-                "--batch_size",
-                "1",
-                "--pretrained_model",
-                "/home/OpenPCDet/output/cfgs/openset/train/centerpoint-nuscenes_detection_train_clip_freeze/default/ckpt/checkpoint_epoch_30.pth"
-            ],
+                "/home/OpenPCDet/tools/cfgs/openset/centerpoint-nuscenes_detection_train_clip_freeze_repro.yaml"
+            ]
         },
 
+        {
+            "name": "waymo-clip-test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args":[
+                "--cfg_file",
+                "/home/OpenPCDet/tools/cfgs/hyundai/exp1/model/autoencoder/waymo_clip_test.yaml"
+            ]
+        },
+
+        // {
+        //     "name": "CLIP feature test",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/train.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "/home/OpenPCDet/tools/cfgs/openset/clip_test.yaml",
+        //         "--batch_size",
+        //         "1",
+        //         "--pretrained_model",
+        //         "/home/OpenPCDet/output/cfgs/openset/train/centerpoint-nuscenes_detection_train_clip_freeze/default/ckpt/checkpoint_epoch_30.pth"
+        //     ],
+        // },
 
         {
             "name": "Python: Current File",
@@ -34,9 +60,8 @@
             }
         },
 
-
         // {
-        //     "name": "create_data",
+        //     "name": "create_data-nuscenes",
         //     "type": "python",
         //     "request": "launch",
         //     "program": "/home/OpenPCDet/pcdet/datasets/nuscenes/openset_nuscenes_dataset.py",
@@ -54,6 +79,21 @@
         // },
 
         // {
+        //     "name": "create_data-kitti",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/pcdet/datasets/kitti/kitti_dataset.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "create_kitti_infos",
+        //         "/home/OpenPCDet/tools/cfgs/dataset_configs/kitti_dataset.yaml",
+        //     ],
+        //     "cwd": "/home/OpenPCDet/pcdet/datasets/kitti"
+        // },
+
+
+        // {
         //     "name": "centerpt-nuscenes-train",
         //     "type": "python",
         //     "request": "launch",
@@ -68,6 +108,8 @@
         //         "CUDA_VISIBLE_DEVICES": "4"
         //     }
         // },
+
+
         // {
         //     "name": "centerpt-nuscenes-test",
         //     "type": "python",
@@ -87,7 +129,6 @@
         //         "CUDA_VISIBLE_DEVICES": "4"
         //     }
         // },
-
 
 
         // {
@@ -128,7 +169,6 @@
         // },
 
 
-
         // {
         //     "name": "openset_centerpt-nuscenes-detection-train-clip-freeze-test",
         //     "type": "python",
@@ -152,7 +192,6 @@
         // },
 
 
-
         // {
         //     "name": "openset_centerpt-nuscenes-detection-freeze-clip-train",
         //     "type": "python",
@@ -174,8 +213,6 @@
         //     },
         //     "cwd": "/home/OpenPCDet/tools"
         // },
-
-
         // {
         //     "name": "openset_centerpt-nuscenes-detection-freeze-clip-trainv2",
         //     "type": "python",
@@ -195,6 +232,7 @@
         //     },
         //     "cwd": "/home/OpenPCDet/tools"
         // },     
+
 
         // {
         //     "name": "openset_centerpt-nuscenes-detection-freeze-clip-freeze",
@@ -223,33 +261,29 @@
         // },
 
 
-
-
-        {
-            "name": "openset_centerpt-nuscenes-test",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/test.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "./cfgs/openset/centerpoint-nuscenes.yaml",
-                "--batch_size",
-                "1",
-                "--ckpt",
-                "/home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes/default/ckpt/checkpoint_epoch_14.pth"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "4"
-            },
-            "cwd": "/home/OpenPCDet/tools"
-        },
-
-
+        // {
+        //     "name": "openset_centerpt-nuscenes-test",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/test.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/openset/centerpoint-nuscenes.yaml",
+        //         "--batch_size",
+        //         "1",
+        //         "--ckpt",
+        //         "/home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes/default/ckpt/checkpoint_epoch_14.pth"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "4"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
 
         {
-            "name": "Recon-train",
+            "name": "Reconstruction-train",
             "type": "python",
             "request": "launch",
             "program": "/home/OpenPCDet/tools/train.py",
@@ -257,7 +291,7 @@
             "justMyCode": true,
             "args": [
                 "--cfg_file",
-                "./cfgs/openset/centerpoint-nuscenes_reconstruction_bev.yaml"
+                "./cfgs/hyundai/exp1/model/autoencoder/kitti_clip_autoencoder.yaml"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0",
@@ -265,8 +299,9 @@
             },
             "cwd": "/home/OpenPCDet/tools"
         },
+
         {
-            "name": "Recon-test",
+            "name": "Reconstruction-test",
             "type": "python",
             "request": "launch",
             "program": "/home/OpenPCDet/tools/test_recon.py",
@@ -285,8 +320,83 @@
             "cwd": "/home/OpenPCDet/tools"
         },
 
+        // {
+        //     "name": "baseline-waymo-train-waymo-test",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/train.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "/home/OpenPCDet/tools/cfgs/waymo_models/centerpoint.yaml",
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "1"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
+        // {
+        //     "name": "baseline-kitti-train-waymo-test",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/train.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/hyundai/exp1/model/kitti_train_waymo_test_deeper_aug_all_points.yaml",
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "1"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
+
+        // {
+        //     "name": "baseline-kitti-train-waymo-test-test",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/test.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/hyundai/exp1/model/kitti_train_waymo_test_deeper_aug.yaml",
+        //         "--batch_size",
+        //         "32",
+        //         "--ckpt",
+        //         "/home/OpenPCDet/output/cfgs/hyundai/exp1/model/kitti_train_waymo_test_deeper_aug/default/ckpt/checkpoint_epoch_80.pth"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "1"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
+
+        // {
+        //     "name": "baseline-kitti-train-nuscenes-test-test",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/test.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "./cfgs/hyundai/exp2/model/kitti_train_nuscenes_test.yaml",
+        //         "--batch_size",
+        //         "1",
+        //         "--ckpt",
+        //         "/home/OpenPCDet/output/cfgs/hyundai/exp2/model/kitti_train_nuscenes_test/default/ckpt/checkpoint_epoch_80.pth"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "1"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
+
         {
-            "name": "waymo",
+            "name": "openset-kitti-train-waymo-test_detection_train_clip_freeze",
             "type": "python",
             "request": "launch",
             "program": "/home/OpenPCDet/tools/train.py",
@@ -294,15 +404,16 @@
             "justMyCode": true,
             "args": [
                 "--cfg_file",
-                "/home/OpenPCDet/tools/cfgs/waymo_models/centerpoint.yaml",
+                "./cfgs/hyundai/exp1/model/openset/openset_kitti_train_waymo_test_detection_train_clip_freeze.yaml",
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "1"
             },
             "cwd": "/home/OpenPCDet/tools"
         },
+
         {
-            "name": "kitti-train-waymo-test",
+            "name": "openset-kitti-train-waymo-test_detection_freeze_clip_train",
             "type": "python",
             "request": "launch",
             "program": "/home/OpenPCDet/tools/train.py",
@@ -310,48 +421,35 @@
             "justMyCode": true,
             "args": [
                 "--cfg_file",
-                "./cfgs/hyundai/exp1/model/kitti_train_waymo_test.yaml",
+                "./cfgs/hyundai/exp1/model/openset/openset_kitti_train_waymo_test_detection_freeze_clip_train.yaml",
+                "--pretrained_model",
+                "/home/OpenPCDet/output/kitti_combined_weight_detection80_reconlatest.pth"
             ],
             "env": {
-                "CUDA_VISIBLE_DEVICES": "1"
+                "CUDA_VISIBLE_DEVICES": "0"
             },
             "cwd": "/home/OpenPCDet/tools"
         },
-        {
-            "name": "kitti-train-waymo-test-test",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/test.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "./cfgs/hyundai/exp1/model/kitti_train_waymo_test_deeper_aug.yaml",
-                "--batch_size",
-                "1",
-                "--ckpt",
-                "/home/OpenPCDet/output/cfgs/hyundai/exp1/model/kitti_train_waymo_test_deeper_aug/default/ckpt/checkpoint_epoch_80.pth"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "1"
-            },
-            "cwd": "/home/OpenPCDet/tools"
-        },
-        {
-            "name": "openset-kitti-train-waymo-test",
-            "type": "python",
-            "request": "launch",
-            "program": "/home/OpenPCDet/tools/train.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--cfg_file",
-                "./cfgs/hyundai/exp1/model/openset_kitti_train_waymo_test.yaml",
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "1"
-            },
-            "cwd": "/home/OpenPCDet/tools"
-        },
+
+        // {
+        //     "name": "baseline-kitti-train-kiti-test-test",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "/home/OpenPCDet/tools/test.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true,
+        //     "args": [
+        //         "--cfg_file",
+        //         "/home/OpenPCDet/tools/cfgs/kitti_models/centerpoint.yaml",
+        //         "--batch_size",
+        //         "32",
+        //         "--ckpt",
+        //         "/home/OpenPCDet/output/cfgs/kitti_models/centerpoint/default/ckpt/checkpoint_epoch_80.pth"
+        //     ],
+        //     "env": {
+        //         "CUDA_VISIBLE_DEVICES": "1"
+        //     },
+        //     "cwd": "/home/OpenPCDet/tools"
+        // },
     ]
 }

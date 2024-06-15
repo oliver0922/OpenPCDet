@@ -20,7 +20,7 @@ from ...utils import box_utils, common_utils
 from ..dataset import DatasetTemplate
 
 
-class WaymoDataset(DatasetTemplate):
+class Openset_WaymoDataset(DatasetTemplate):
     def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None):
         super().__init__(
             dataset_cfg=dataset_cfg, class_names=class_names, training=training, root_path=root_path, logger=logger
@@ -207,6 +207,20 @@ class WaymoDataset(DatasetTemplate):
                 points_all[:, dim_idx] = np.tanh(points_all[:, dim_idx])
         return points_all
 
+    def get_clip(self, sequence_name, sample_idx, points):
+        
+        # sample_idx = 00000
+        # clip_path = self.root_path / 'training_openseg'/ sequence_name / ('%06d.npz' % sample_idx)
+        clip_path = self.data_path / sequence_name / ('%04d_openseg.npz' % sample_idx)
+
+        clip_feature = np.load(clip_path)['feat']
+        entire_mask = np.load(clip_path)['mask_full']
+        if clip_feature is not None:
+            clip_feature = np.concatenate((points,clip_feature), axis=1)
+            
+        return clip_feature, entire_mask
+
+
     @staticmethod
     def transform_prebox_to_current(pred_boxes3d, pose_pre, pose_cur):
         """
@@ -349,14 +363,19 @@ class WaymoDataset(DatasetTemplate):
         pc_info = info['point_cloud']
         sequence_name = pc_info['lidar_sequence']
         sample_idx = pc_info['sample_idx']
+        
         input_dict = {
             'sample_idx': sample_idx
         }
+        
+        
         if self.use_shared_memory and index < self.shared_memory_file_limit:
             sa_key = f'{sequence_name}___{sample_idx}'
             points = SharedArray.attach(f"shm://{sa_key}").copy()
         else:
             points = self.get_lidar(sequence_name, sample_idx)
+            clip_feature, entire_mask = self.get_clip(sequence_name, sample_idx, points)
+            input_dict.update({"clip":clip_feature, "clip_mask":entire_mask})
 
         if self.dataset_cfg.get('SEQUENCE_CONFIG', None) is not None and self.dataset_cfg.SEQUENCE_CONFIG.ENABLED:
             points, num_points_all, sample_idx_pre_list, poses, pred_boxes, pred_scores, pred_labels = self.get_sequence_data(
@@ -405,6 +424,8 @@ class WaymoDataset(DatasetTemplate):
         data_dict = self.prepare_data(data_dict=input_dict)
         data_dict['metadata'] = info.get('metadata', info['frame_id'])
         data_dict.pop('num_points_in_gt', None)
+        
+        
         return data_dict
 
     def evaluation(self, det_annos, class_names, **kwargs):

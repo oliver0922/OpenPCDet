@@ -9,15 +9,14 @@ from ...utils.spconv_utils import  spconv
 import numpy as np
 
 
-CHECK_VIZ = False
-class Openset_CenterPoint(Detector3DTemplate):
+CHECK_VIZ = True
+class Openset_Kitti_CenterPoint(Detector3DTemplate):
     def __init__(self, model_cfg, num_class, dataset):
         super().__init__(model_cfg=model_cfg, num_class=num_class, dataset=dataset)
         self.module_list = self.build_networks()
         self.dataset = dataset
         self.logger = dataset.logger
-        if 'LOSS' in model_cfg.keys():
-            self.loss_type = model_cfg.LOSS
+        # self.loss_type = model_cfg.LOSS
         
         if 'COS_LOSS_WEIGHT' in self.model_cfg.keys():
             self.cos_loss_weight = self.model_cfg.COS_LOSS_WEIGHT
@@ -27,58 +26,56 @@ class Openset_CenterPoint(Detector3DTemplate):
         if 'MASK' in self.model_cfg.keys():
             self.mask = self.model_cfg.MASK
         else:
-            self.mask = False     
-               
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            self.mask = False        
 
-        if model_cfg['TRAIN_CLIP']:
-            self.text_set = ['vegetation', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
-                'wall', 'fence', 'sidewalk', 'terrain', 'driveable_surface', 'manmade', 'car','truck', 'construction_vehicle', 'bus', 'trailer',
-                'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
-            self.excavator = ['suv','truck', 'construction_vehicle', 'bus', 'trailer',
-                'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
-                'wall', 'fence', 'sidewalk', 'terrain', 'driveable_surface', 'manmade']
-            
-            # self.text_set = ['car','truck', 'construction_vehicle', 'bus', 'trailer',
-            #       'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
-            
-            self.clip_encoder=  Clip_VoxelResBackBone8x(
-                                                        model_cfg=model_cfg.BACKBONE_3D,
-                                                        input_channels=768,
-                                                        grid_size= self.dataset.grid_size,
-                                                        voxel_size=self.dataset.voxel_size,
-                                                        point_cloud_range=dataset.point_cloud_range,
-                                                        recon = True
-                                                        ).cuda()
-            self.encoder = nn.Sequential(
-            nn.Linear(768,256),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-            nn.Linear(256,128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-            nn.Linear(128,64),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Linear(64,32),
-            nn.BatchNorm1d(32),
-            nn.ReLU(),
-            nn.Linear(32,16),
-            nn.BatchNorm1d(16),
-            nn.ReLU(),                          
-            )
+        self.text_set = ['vegetation', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
+              'wall', 'fence', 'sidewalk', 'terrain', 'driveable_surface', 'manmade', 'car','truck', 'construction_vehicle', 'bus', 'trailer',
+              'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
+        self.excavator = ['suv','truck', 'construction_vehicle', 'bus', 'trailer',
+              'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
+              'wall', 'fence', 'sidewalk', 'terrain', 'driveable_surface', 'manmade']
         
-            self.decoder = nn.Sequential(
-            nn.Linear(16,32),
-            nn.ReLU(),
-            nn.Linear(32,64),
-            nn.ReLU(),
-            nn.Linear(64,128),
-            nn.ReLU(),        
-            nn.Linear(128,256),
-            nn.ReLU(),
-            nn.Linear(256,768),             
-            )
+        # self.text_set = ['car','truck', 'construction_vehicle', 'bus', 'trailer',
+        #       'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
+        
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.clip_encoder=  Clip_VoxelResBackBone8x(
+                                                    model_cfg=model_cfg.BACKBONE_3D,
+                                                    input_channels=768,
+                                                    grid_size= self.dataset.grid_size,
+                                                    voxel_size=self.dataset.voxel_size,
+                                                    point_cloud_range=dataset.point_cloud_range,
+                                                    recon = True
+                                                    ).cuda()
+        self.encoder = nn.Sequential(
+        nn.Linear(768,256),
+        nn.BatchNorm1d(256),
+        nn.ReLU(),
+        nn.Linear(256,128),
+        nn.BatchNorm1d(128),
+        nn.ReLU(),
+        nn.Linear(128,64),
+        nn.BatchNorm1d(64),
+        nn.ReLU(),
+        nn.Linear(64,32),
+        nn.BatchNorm1d(32),
+        nn.ReLU(),
+        nn.Linear(32,16),
+        nn.BatchNorm1d(16),
+        nn.ReLU(),                          
+        )
+       
+        self.decoder = nn.Sequential(
+        nn.Linear(16,32),
+        nn.ReLU(),
+        nn.Linear(32,64),
+        nn.ReLU(),
+        nn.Linear(64,128),
+        nn.ReLU(),        
+        nn.Linear(128,256),
+        nn.ReLU(),
+        nn.Linear(256,768),             
+        )
        
        
         
@@ -97,7 +94,7 @@ class Openset_CenterPoint(Detector3DTemplate):
 
         
         ####### only clip_feature_training ######################
-        if batch_dict['clip_train'] and self.mode=='TRAIN':
+        if 'clip_train' in batch_dict.keys() and self.mode=='TRAIN':
             
             
             
@@ -133,7 +130,7 @@ class Openset_CenterPoint(Detector3DTemplate):
             for cur_module in self.decoder: #decoder
                 for param in cur_module.parameters():
                     param.requires_grad = False           
-            for clip_param in self.dense_head.heads_list[-1].clip.parameters():
+            for clip_param in self.dense_head.heads_list[6].clip.parameters():
                 clip_param.requires_grad = True
                 
             # freezed_modules = [] ####### 학습 가능한 layer 찾기
@@ -149,17 +146,16 @@ class Openset_CenterPoint(Detector3DTemplate):
        ########## decoder 활용해서 visualization ######################
        
         if CHECK_VIZ:
-                   
+            batch_dict = self.clip_encoder(batch_dict)       
             self.text_feats = self.text_extractor(self.text_set, device=self.device)             
             
 
             import numpy as np
             import matplotlib.pyplot as plt
-            self.text_set = ['no_point','vegetation', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
+            self.text_set = ['vegetation', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
               'wall', 'fence', 'sidewalk', 'terrain', 'driveable_surface', 'manmade', 'car','truck', 'construction_vehicle', 'bus', 'trailer',
               'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
             color_map = {
-            'no_point' : [1, 1, 1],
             'vegetation': [1, 0, 0],       # Red
             'road': [1, 0.5, 0],     # Orange
             'street': [1, 1, 0],       # Yellow
@@ -255,115 +251,125 @@ class Openset_CenterPoint(Detector3DTemplate):
             clip_rotated_feature = torch.flip(torch.transpose(clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
             plt.clf()         
             plt.imshow(clip_rotated_feature)
-            plt.savefig("/home/OpenPCDet/visualization/prediction/full/original/with_bg_prediction_original.png",dpi=300, bbox_inches='tight')
+            plt.savefig("/home/OpenPCDet/visualization/prediction/kitti/origin/with_bg_prediction_original.png",dpi=300, bbox_inches='tight')
             plt.axis('off')
             plt.clf() 
             plt.close('all')           
+            
+            ############ kitti gt #############
+            points = batch_dict['points'][:, 1:]
+            gt_boxes = batch_dict['gt_boxes'][0][:,:7]
+            gt_labels =  batch_dict['gt_boxes'][0][:,7]
+            torch.save(points, '/home/OpenPCDet/data_for_vis/kitti_train_waymo_test/points.pt')
+            torch.save(gt_boxes,'/home/OpenPCDet/data_for_vis/kitti_train_waymo_test/gt_boxes.pt')
+            torch.save(gt_labels,'/home/OpenPCDet/data_for_vis/kitti_train_waymo_test/gt_labels.pt')
+            ####################################
+            
             
             
             
             
             ########################################### reconstruction visualization ########################################
             
-            clip_features = batch_dict["clip_input_sp_tensor"].features
-            encoded_clip_features = self.encoder(clip_features)
+            # clip_features = batch_dict["clip_input_sp_tensor"].features
+            # encoded_clip_features = self.encoder(clip_features)
             
             
             
-            ######################visualization for encoded bev clip features###########################
-            # encoded_sp_clip_features = spconv.SparseConvTensor(
-            #     features=encoded_clip_features,
+            # ######################visualization for encoded bev clip features###########################
+            # # encoded_sp_clip_features = spconv.SparseConvTensor(
+            # #     features=encoded_clip_features,
+            # #     indices= batch_dict['clip_voxel_coords'].int(),
+            # #     spatial_shape= np.array(self.model_cfg['CLIP_FEATURE_SHAPE']),
+            # #     batch_size=batch_dict['batch_size']
+            # # )
+            # # encoded_sp_clip_features_densed = encoded_sp_clip_features.dense()
+            # # N, C, D, H, W = encoded_sp_clip_features_densed.shape
+            # # encoded_bev_image_clip_features = encoded_sp_clip_features_densed.view(N, C * D, H, W) 
+            
+            # # mean_encoded_bev_image_clip_features = encoded_bev_image_clip_features[0].mean(dim=0)
+            # # mean_predicted_bev_clip_feature = predicted_bev_clip_feature[0].mean(dim=0)
+            # # a = predicted_bev_clip_feature[0,:,0,0]
+            # # b = encoded_bev_image_clip_features[0,:,0,0]
+            # #############################################################################################
+            
+            
+            
+            
+            # recon_features = self.decoder(encoded_clip_features)
+            
+            
+            # recon_sp_clip_features = spconv.SparseConvTensor(
+            #     features=recon_features,
             #     indices= batch_dict['clip_voxel_coords'].int(),
             #     spatial_shape= np.array(self.model_cfg['CLIP_FEATURE_SHAPE']),
             #     batch_size=batch_dict['batch_size']
             # )
-            # encoded_sp_clip_features_densed = encoded_sp_clip_features.dense()
-            # N, C, D, H, W = encoded_sp_clip_features_densed.shape
-            # encoded_bev_image_clip_features = encoded_sp_clip_features_densed.view(N, C * D, H, W) 
-            
-            # mean_encoded_bev_image_clip_features = encoded_bev_image_clip_features[0].mean(dim=0)
-            # mean_predicted_bev_clip_feature = predicted_bev_clip_feature[0].mean(dim=0)
-            # a = predicted_bev_clip_feature[0,:,0,0]
-            # b = encoded_bev_image_clip_features[0,:,0,0]
-            #############################################################################################
-            
-            
-            
-            
-            recon_features = self.decoder(encoded_clip_features)
-            
-            
-            recon_sp_clip_features = spconv.SparseConvTensor(
-                features=recon_features,
-                indices= batch_dict['clip_voxel_coords'].int(),
-                spatial_shape= np.array(self.model_cfg['CLIP_FEATURE_SHAPE']),
-                batch_size=batch_dict['batch_size']
-            )
        
-            recon_clip_spatial_features = recon_sp_clip_features.dense()
-            N, C, D, H, W = recon_clip_spatial_features.shape
-            recon_bev_image_clip_features = recon_clip_spatial_features.view(N, C * D, H, W)       
+            # recon_clip_spatial_features = recon_sp_clip_features.dense()
+            # N, C, D, H, W = recon_clip_spatial_features.shape
+            # recon_bev_image_clip_features = recon_clip_spatial_features.view(N, C * D, H, W)       
        
-            B, C, H, W = recon_bev_image_clip_features.shape
-            recon_image_clip_features_flatten = recon_bev_image_clip_features.contiguous().flatten(2).squeeze().to(self.device)
-            recon_image_clip_features_norm = (recon_image_clip_features_flatten/(recon_image_clip_features_flatten.norm(dim=0, keepdim=True)+1e-5)).half()
+            # B, C, H, W = recon_bev_image_clip_features.shape
+            # recon_image_clip_features_flatten = recon_bev_image_clip_features.contiguous().flatten(2).squeeze().to(self.device)
+            # recon_image_clip_features_norm = (recon_image_clip_features_flatten/(recon_image_clip_features_flatten.norm(dim=0, keepdim=True)+1e-5)).half()
             
-            recon_class_preds = (self.text_feats @ recon_image_clip_features_norm) # text_clip_features # background_index = 0 ~ 12 , object_index = 13 ~ 22
-            recon_max_score, recon_max_indices = torch.max(recon_class_preds, dim=0)
-            recon_score_masked_indices = (recon_max_score>0.02).nonzero(as_tuple=True)[0]
-            
-            
-            recon_height_index = (recon_score_masked_indices // W).int()
-            recon_width_index = (recon_score_masked_indices % W).int()
-            recon_spatial_infos = torch.stack((recon_height_index, recon_width_index), dim=1).cpu().detach().numpy()
-            recon_bev_vis_clip_features = np.ones((H, W, 3))
-            recon_numpy_class_idx = np.asarray(recon_max_indices[recon_score_masked_indices].cpu().detach().numpy(),dtype=int)
-            for idx in range(len(recon_numpy_class_idx)):
-                recon_bev_vis_clip_features[recon_spatial_infos[idx,0],recon_spatial_infos[idx,1],:] = color_map[color_map_list[recon_numpy_class_idx[idx]]]
-            recon_clip_flipped_feature = torch.flip(torch.tensor(recon_bev_vis_clip_features), [1])
-            recon_clip_rotated_feature = torch.flip(torch.transpose(recon_clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
-            plt.clf()         
-            plt.imshow(recon_clip_rotated_feature)
-            plt.savefig("/home/OpenPCDet/visualization/prediction/full/recon/with_bg_prediction_reconstruction.png",dpi=300, bbox_inches='tight')
-            plt.axis('off')
-            plt.clf() 
-            plt.close('all')
-            
-            ##################################################################################################################
+            # recon_class_preds = (self.text_feats @ recon_image_clip_features_norm) # text_clip_features # background_index = 0 ~ 12 , object_index = 13 ~ 22
+            # recon_max_score, recon_max_indices = torch.max(recon_class_preds, dim=0)
+            # recon_score_masked_indices = (recon_max_score>0.02).nonzero(as_tuple=True)[0]
             
             
+            # recon_height_index = (recon_score_masked_indices // W).int()
+            # recon_width_index = (recon_score_masked_indices % W).int()
+            # recon_spatial_infos = torch.stack((recon_height_index, recon_width_index), dim=1).cpu().detach().numpy()
+            # recon_bev_vis_clip_features = np.ones((H, W, 3))
+            # recon_numpy_class_idx = np.asarray(recon_max_indices[recon_score_masked_indices].cpu().detach().numpy(),dtype=int)
+            # for idx in range(len(recon_numpy_class_idx)):
+            #     recon_bev_vis_clip_features[recon_spatial_infos[idx,0],recon_spatial_infos[idx,1],:] = color_map[color_map_list[recon_numpy_class_idx[idx]]]
+            # recon_clip_flipped_feature = torch.flip(torch.tensor(recon_bev_vis_clip_features), [1])
+            # recon_clip_rotated_feature = torch.flip(torch.transpose(recon_clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
+            # plt.clf()         
+            # plt.imshow(recon_clip_rotated_feature)
+            # plt.savefig("/home/OpenPCDet/visualization/prediction/full/recon/with_bg_prediction_reconstruction.png",dpi=300, bbox_inches='tight')
+            # plt.axis('off')
+            # plt.clf() 
+            # plt.close('all')
+            
+            # ##################################################################################################################
             
             
             
-            ########################################### prediction visualization ########################################
-            
-            predicted_bev_clip_feature = batch_dict['preds_clip_bev_features']
-            N, C, H, W = predicted_bev_clip_feature.shape
-            flatten_predicted_bev_clip_feature = predicted_bev_clip_feature[0].contiguous().flatten(1).contiguous().permute(1,0)
-            decoded_flatten_predicted_bev_clip_feature = self.decoder(flatten_predicted_bev_clip_feature).contiguous().permute(1,0)
-            
-            decoded_flatten_predicted_bev_clip_feature_norm = (decoded_flatten_predicted_bev_clip_feature/(decoded_flatten_predicted_bev_clip_feature.norm(dim=0, keepdim=True)+1e-5)).half()
-            
-            pred_class_preds = (self.text_feats @ decoded_flatten_predicted_bev_clip_feature_norm) # text_clip_features # background_index = 0 ~ 12 , object_index = 13 ~ 22
-            pred_max_score, pred_max_indices = torch.max(pred_class_preds, dim=0)
-            pred_score_masked_indices = (pred_max_score>0.08).nonzero(as_tuple=True)[0]
             
             
-            pred_height_index = (pred_score_masked_indices // W).int()
-            pred_width_index = (pred_score_masked_indices % W).int()
-            pred_spatial_infos = torch.stack((pred_height_index, pred_width_index), dim=1).cpu().detach().numpy()
-            pred_bev_vis_clip_features = np.ones((H, W, 3))
-            pred_numpy_class_idx = np.asarray(pred_max_indices[pred_score_masked_indices].cpu().detach().numpy(),dtype=int)
-            for idx in range(len(pred_numpy_class_idx)):
-                pred_bev_vis_clip_features[pred_spatial_infos[idx,0],pred_spatial_infos[idx,1],:] = color_map[color_map_list[pred_numpy_class_idx[idx]]]
-            pred_clip_flipped_feature = torch.flip(torch.tensor(pred_bev_vis_clip_features), [1])
-            pred_clip_rotated_feature = torch.flip(torch.transpose(pred_clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
-            plt.clf()         
-            plt.imshow(pred_clip_rotated_feature)
-            plt.savefig("/home/OpenPCDet/visualization/prediction/full/preds/with_bg_prediction_from_centerpt_"+str(self.loss_type)+'mask'+str(self.mask)+"16_sample_1.png",dpi=300, bbox_inches='tight')
-            plt.axis('off')
-            plt.clf() 
-            plt.close('all')
+            # ########################################### prediction visualization ########################################
+            
+            # predicted_bev_clip_feature = batch_dict['preds_clip_bev_features']
+            # N, C, H, W = predicted_bev_clip_feature.shape
+            # flatten_predicted_bev_clip_feature = predicted_bev_clip_feature[0].contiguous().flatten(1).contiguous().permute(1,0)
+            # decoded_flatten_predicted_bev_clip_feature = self.decoder(flatten_predicted_bev_clip_feature).contiguous().permute(1,0)
+            
+            # decoded_flatten_predicted_bev_clip_feature_norm = (decoded_flatten_predicted_bev_clip_feature/(decoded_flatten_predicted_bev_clip_feature.norm(dim=0, keepdim=True)+1e-5)).half()
+            
+            # pred_class_preds = (self.text_feats @ decoded_flatten_predicted_bev_clip_feature_norm) # text_clip_features # background_index = 0 ~ 12 , object_index = 13 ~ 22
+            # pred_max_score, pred_max_indices = torch.max(pred_class_preds, dim=0)
+            # pred_score_masked_indices = (pred_max_score>0.08).nonzero(as_tuple=True)[0]
+            
+            
+            # pred_height_index = (pred_score_masked_indices // W).int()
+            # pred_width_index = (pred_score_masked_indices % W).int()
+            # pred_spatial_infos = torch.stack((pred_height_index, pred_width_index), dim=1).cpu().detach().numpy()
+            # pred_bev_vis_clip_features = np.ones((H, W, 3))
+            # pred_numpy_class_idx = np.asarray(pred_max_indices[pred_score_masked_indices].cpu().detach().numpy(),dtype=int)
+            # for idx in range(len(pred_numpy_class_idx)):
+            #     pred_bev_vis_clip_features[pred_spatial_infos[idx,0],pred_spatial_infos[idx,1],:] = color_map[color_map_list[pred_numpy_class_idx[idx]]]
+            # pred_clip_flipped_feature = torch.flip(torch.tensor(pred_bev_vis_clip_features), [1])
+            # pred_clip_rotated_feature = torch.flip(torch.transpose(pred_clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
+            # plt.clf()         
+            # plt.imshow(pred_clip_rotated_feature)
+            # plt.savefig("/home/OpenPCDet/visualization/prediction/full/preds/with_bg_prediction_from_centerpt_"+str(self.loss_type)+'mask'+str(self.mask)+"16_sample_1.png",dpi=300, bbox_inches='tight')
+            # plt.axis('off')
+            # plt.clf() 
+            # plt.close('all')
             
             ##########################################################################################################
 
@@ -375,7 +381,7 @@ class Openset_CenterPoint(Detector3DTemplate):
         if self.training:
             loss, tb_dict, disp_dict = self.get_training_loss()
             
-            if batch_dict['clip_train']:
+            if 'clip_train' in batch_dict.keys():
                 clip_loss = self.get_clip_loss(batch_dict)
 
 

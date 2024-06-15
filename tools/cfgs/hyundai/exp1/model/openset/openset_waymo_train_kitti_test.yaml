@@ -1,23 +1,20 @@
-CLASS_NAMES: ['car','truck', 'construction_vehicle', 'bus', 'trailer',
-              'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone','object']
-
-# CLASS_NAMES: ['object']
+CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist'] #train
+# CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist'] #test
 
 
 DATA_CONFIG:
-    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/dataset_configs/openset_detection_freeze_clip_train.yaml
-
+    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/openset_waymo_dataset.yaml #train
+#   _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/kitti_dataset.yaml # test
 MODEL:
-    NAME: Openset_CenterPoint
-    # CLIP_PRETRAINED_PATH: /home/OpenPCDet/output/cfgs/openset/centerpoint-nuscenes_reconstruction/default/ckpt/latest_model.pth
-    CLIP_FEATURE_SHAPE : [1, 128, 128]
-    LOSS: cosine
+    NAME: Openset_Waymo_CenterPoint
+    CLIP_FEATURE_SHAPE : [1, 188, 188]
+
     VFE:
         NAME: MeanVFE
 
-    BACKBONE_3D: 
-        NAME:  Openset_VoxelResBackBone8x
-        CLIP_FEATURE_SHAPE : [1, 128, 128]
+    BACKBONE_3D:
+        NAME: VoxelResBackBone8x
+        CLIP_FEATURE_SHAPE : [1, 188, 188]
 
     MAP_TO_BEV:
         NAME: HeightCompression
@@ -33,33 +30,24 @@ MODEL:
         NUM_UPSAMPLE_FILTERS: [256, 256]
 
     DENSE_HEAD:
-        NAME: Openset_CenterHead
+        NAME: CenterHead
         CLASS_AGNOSTIC: False
-        CLIP_TRAIN: True
-        DATA_SET_NAME : 'KITTI'
 
         CLASS_NAMES_EACH_HEAD: [
-            ['car'], 
-            ['truck', 'construction_vehicle'],
-            ['bus', 'trailer'],
-            ['barrier'],
-            ['motorcycle', 'bicycle'],
-            ['pedestrian', 'traffic_cone'],
-            ['object']
+            ['Vehicle', 'Pedestrian', 'Cyclist'] #train
+            # ['Car', 'Pedestrian', 'Cyclist'] #test
         ]
 
         SHARED_CONV_CHANNEL: 64
         USE_BIAS_BEFORE_NORM: True
         NUM_HM_CONV: 2
         SEPARATE_HEAD_CFG:
-            HEAD_ORDER: ['center', 'center_z', 'dim', 'rot', 'vel']
+            HEAD_ORDER: ['center', 'center_z', 'dim', 'rot']
             HEAD_DICT: {
                 'center': {'out_channels': 2, 'num_conv': 2},
                 'center_z': {'out_channels': 1, 'num_conv': 2},
                 'dim': {'out_channels': 3, 'num_conv': 2},
                 'rot': {'out_channels': 2, 'num_conv': 2},
-                'vel': {'out_channels': 2, 'num_conv': 2},
-                'clip': {'out_channels': 768, 'num_conv': 2}
             }
 
         TARGET_ASSIGNER_CONFIG:
@@ -71,33 +59,38 @@ MODEL:
         LOSS_CONFIG:
             LOSS_WEIGHTS: {
                 'cls_weight': 1.0,
-                'loc_weight': 0.25,
-                'code_weights': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2, 1.0, 1.0]
+                'loc_weight': 2.0,
+                'code_weights': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             }
 
         POST_PROCESSING:
             SCORE_THRESH: 0.1
-            POST_CENTER_LIMIT_RANGE: [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0]
+            POST_CENTER_LIMIT_RANGE: [-75.2, -75.2, -2, 75.2, 75.2, 4]
             MAX_OBJ_PER_SAMPLE: 500
             NMS_CONFIG:
                 NMS_TYPE: nms_gpu
-                NMS_THRESH: 0.2
-                NMS_PRE_MAXSIZE: 1000
-                NMS_POST_MAXSIZE: 83
+                NMS_THRESH: 0.7
+                NMS_PRE_MAXSIZE: 4096
+                NMS_POST_MAXSIZE: 500
 
     POST_PROCESSING:
         RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
+        SCORE_THRESH: 0.1
+        OUTPUT_RAW_SCORE: False
 
         EVAL_METRIC: kitti
 
-    # PRETRAINED_PATH: '/home/OpenPCDet/output/cfgs/openset/train/centerpoint-nuscenes_reconstruction_lr_2_morelayer/default/ckpt/latest_model.pth'
-
-
+        NMS_CONFIG:
+            MULTI_CLASSES_NMS: False
+            NMS_TYPE: nms_gpu
+            NMS_THRESH: 0.01
+            NMS_PRE_MAXSIZE: 4096
+            NMS_POST_MAXSIZE: 500
 
 
 OPTIMIZATION:
     BATCH_SIZE_PER_GPU: 1
-    NUM_EPOCHS: 450
+    NUM_EPOCHS: 30
 
     OPTIMIZER: adam_onecycle
     LR: 0.003
@@ -112,6 +105,6 @@ OPTIMIZATION:
     LR_CLIP: 0.0000001
 
     LR_WARMUP: False
-    WARMUP_EPOCH: 0
+    WARMUP_EPOCH: 1
 
     GRAD_NORM_CLIP: 10

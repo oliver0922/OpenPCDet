@@ -315,9 +315,9 @@ class DatasetTemplate(torch_data.Dataset):
                     ret[key] = np.stack(points, axis=0)
                 elif key in ['camera_imgs']:
                     ret[key] = torch.stack([torch.stack(imgs,dim=0) for imgs in val],dim=0)
-                elif key in ['coords','clip','mask','feats','labels'] :
+                elif key in ['coords','clip','clip_mask','feats','labels'] :
                     ret[key] = np.concatenate(val, axis=0)
-                elif key in ['clip_train']:
+                elif key in ['clip_train','db_flag','recon']:
                     ret[key] = val[0]
                 else:
                     ret[key] = np.stack(val, axis=0)

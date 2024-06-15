@@ -1,8 +1,10 @@
-CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist']
+CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist'] #train
+# CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist'] #test
 
 DATA_CONFIG:
-    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/waymo_dataset.yaml #train
-  # _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/kitti_dataset.yaml # test
+    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/baseline/kitti_dataset_origin.yaml # train
+    # _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/waymo_dataset.yaml #test
+
 MODEL:
     NAME: CenterPoint
 
@@ -30,16 +32,17 @@ MODEL:
         CLASS_AGNOSTIC: False
 
         CLASS_NAMES_EACH_HEAD: [
-            ['Vehicle', 'Pedestrian', 'Cyclist']
+            [ 'Car', 'Pedestrian', 'Cyclist' ] #train
+            # [ 'Vehicle', 'Pedestrian', 'Cyclist' ] #test        
         ]
 
         SHARED_CONV_CHANNEL: 64
         USE_BIAS_BEFORE_NORM: True
-        NUM_HM_CONV: 2
+        NUM_HM_CONV: 2 #  heatmap
         SEPARATE_HEAD_CFG:
             HEAD_ORDER: ['center', 'center_z', 'dim', 'rot']
             HEAD_DICT: {
-                'center': {'out_channels': 2, 'num_conv': 2},
+                'center': {'out_channels': 2, 'num_conv': 2}, # offset
                 'center_z': {'out_channels': 1, 'num_conv': 2},
                 'dim': {'out_channels': 3, 'num_conv': 2},
                 'rot': {'out_channels': 2, 'num_conv': 2},
@@ -57,7 +60,6 @@ MODEL:
                 'loc_weight': 2.0,
                 'code_weights': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             }
-
         POST_PROCESSING:
             SCORE_THRESH: 0.1
             POST_CENTER_LIMIT_RANGE: [-75.2, -75.2, -2, 75.2, 75.2, 4]
@@ -70,22 +72,23 @@ MODEL:
 
     POST_PROCESSING:
         RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
-        SCORE_THRESH: 0.1
+        # SCORE_THRESH: 0.1 #kitti
         OUTPUT_RAW_SCORE: False
 
-        EVAL_METRIC: kitti
+        # EVAL_METRIC: kitti # train
+        EVAL_METRIC: waymo # test
 
-        NMS_CONFIG:
-            MULTI_CLASSES_NMS: False
-            NMS_TYPE: nms_gpu
-            NMS_THRESH: 0.01
-            NMS_PRE_MAXSIZE: 4096
-            NMS_POST_MAXSIZE: 500
+        # NMS_CONFIG: # kitti
+        #     MULTI_CLASSES_NMS: False
+        #     NMS_TYPE: nms_gpu
+        #     NMS_THRESH: 0.01
+        #     NMS_PRE_MAXSIZE: 4096
+        #     NMS_POST_MAXSIZE: 500
 
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 4
-    NUM_EPOCHS: 30
+    BATCH_SIZE_PER_GPU: 16
+    NUM_EPOCHS: 80
 
     OPTIMIZER: adam_onecycle
     LR: 0.003

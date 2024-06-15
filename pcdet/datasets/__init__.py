@@ -6,12 +6,14 @@ from torch.utils.data import DistributedSampler as _DistributedSampler
 from pcdet.utils import common_utils
 
 from .dataset import DatasetTemplate
+from .kitti.class_agnostic_kitti_dataset import KittiDatasetV2
 from .kitti.kitti_dataset import KittiDataset
 from .nuscenes.nuscenes_dataset import NuScenesDataset
 from .nuscenes.openset_nuscenes_dataset import Openset_NuScenesDataset
 from .kitti.openset_kitti_dataset import Openset_KittiDataset
 from .nuscenes.recon_openset_nuscenes_dataset import Recon_Openset_NuScenesDataset
 from .waymo.waymo_dataset import WaymoDataset
+from .waymo.openset_waymo_dataset import Openset_WaymoDataset
 from .pandaset.pandaset_dataset import PandasetDataset
 from .lyft.lyft_dataset import LyftDataset
 from .once.once_dataset import ONCEDataset
@@ -24,6 +26,7 @@ __all__ = {
     "Openset_KittiDataset":Openset_KittiDataset,
     'NuScenesDataset': NuScenesDataset,
     'WaymoDataset': WaymoDataset,
+    'Openset_WaymoDataset': Openset_WaymoDataset,
     'PandasetDataset': PandasetDataset,
     'LyftDataset': LyftDataset,
     'ONCEDataset': ONCEDataset,
@@ -85,5 +88,11 @@ def build_dataloader(dataset_cfg, class_names, batch_size, dist, root_path=None,
         shuffle=(sampler is None) and training, collate_fn=dataset.collate_batch,
         drop_last=False, sampler=sampler, timeout=0, worker_init_fn=partial(common_utils.worker_init_fn, seed=seed)
     )
+    ### shuffle false
+    # dataloader = DataLoader(
+    #     dataset, batch_size=batch_size, pin_memory=True, num_workers=workers,
+    #     shuffle=False and training, collate_fn=dataset.collate_batch,
+    #     drop_last=False, sampler=sampler, timeout=0, worker_init_fn=partial(common_utils.worker_init_fn, seed=seed)
+    # )
 
     return dataset, dataloader, sampler

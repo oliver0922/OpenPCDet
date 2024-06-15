@@ -9,6 +9,8 @@ from .caddn import CaDDN
 from .voxel_rcnn import VoxelRCNN
 from .centerpoint import CenterPoint
 from .openset_centerpoint import Openset_CenterPoint
+from .openset_kitti_train_centerpoint import Openset_Kitti_CenterPoint
+from .openset_waymo_train_centerpoint import Openset_Waymo_CenterPoint
 from .openset_centerpointv2 import Openset_CenterPointV2
 from .openset_centerpointv3 import Openset_CenterPointV3
 from .openset_centerpoint_test import Openset_CenterPoint_test
@@ -34,6 +36,8 @@ __all__ = {
     'VoxelRCNN': VoxelRCNN,
     'CenterPoint': CenterPoint,
     'Openset_CenterPoint':Openset_CenterPoint,
+    "Openset_Kitti_CenterPoint":Openset_Kitti_CenterPoint,
+    "Openset_Waymo_CenterPoint":Openset_Waymo_CenterPoint,
     'Openset_CenterPointV2':Openset_CenterPointV2,
     "Openset_CenterPointV3":Openset_CenterPointV3,
     'Openset_CenterPoint_test':Openset_CenterPoint_test,

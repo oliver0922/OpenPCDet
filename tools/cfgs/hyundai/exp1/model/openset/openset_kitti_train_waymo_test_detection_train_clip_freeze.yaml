@@ -1,18 +1,22 @@
-CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist'] #train
+CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist', 'objectness'] #train
 # CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist'] #test
 
 DATA_CONFIG:
-    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/openset_kitti_dataset_shift_aug.yaml # train
+    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/openset/openset_kitti_train_waymo_test_detection_train_clip_freeze_aug.yaml # train
     # _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/waymo_dataset.yaml #test
 
 MODEL:
-    NAME: CenterPoint
+
+    TRAIN_CLIP: False
+
+    NAME: Openset_CenterPoint
 
     VFE:
         NAME: MeanVFE
 
     BACKBONE_3D:
         NAME: VoxelResBackBone8x
+        CLIP_FEATURE_SHAPE : [1, 188, 188]
 
     MAP_TO_BEV:
         NAME: HeightCompression
@@ -21,18 +25,20 @@ MODEL:
     BACKBONE_2D:
         NAME: BaseBEVBackbone
 
-        LAYER_NUMS: [5]
-        LAYER_STRIDES: [1]
-        NUM_FILTERS: [128]
-        UPSAMPLE_STRIDES: [2]
-        NUM_UPSAMPLE_FILTERS: [256]
+        LAYER_NUMS: [5, 5]
+        LAYER_STRIDES: [1, 2]
+        NUM_FILTERS: [128, 256]
+        UPSAMPLE_STRIDES: [1, 2]
+        NUM_UPSAMPLE_FILTERS: [256, 256]
 
     DENSE_HEAD:
-        NAME: CenterHead
+        NAME: Openset_CenterHead
         CLASS_AGNOSTIC: False
+        CLIP_TRAIN: False
 
         CLASS_NAMES_EACH_HEAD: [
-            [ 'Car', 'Pedestrian', 'Cyclist' ] #train
+            [ 'Car', 'Pedestrian', 'Cyclist' ],
+            ['objectness'] #train
             # [ 'Vehicle', 'Pedestrian', 'Cyclist' ] #test        
         ]
 
@@ -46,11 +52,11 @@ MODEL:
                 'center_z': {'out_channels': 1, 'num_conv': 2},
                 'dim': {'out_channels': 3, 'num_conv': 2},
                 'rot': {'out_channels': 2, 'num_conv': 2},
+                'clip': {'out_channels': 768, 'num_conv': 2}
             }
 
         TARGET_ASSIGNER_CONFIG:
-            FEATURE_MAP_STRIDE: 4 
-            # FEATURE_MAP_STRIDE: 8 #test
+            FEATURE_MAP_STRIDE: 8
             NUM_MAX_OBJS: 500
             GAUSSIAN_OVERLAP: 0.1
             MIN_RADIUS: 2
@@ -73,22 +79,22 @@ MODEL:
 
     POST_PROCESSING:
         RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
-        SCORE_THRESH: 0.1 #kitti
+        # SCORE_THRESH: 0.1 #kitti
         OUTPUT_RAW_SCORE: False
 
-        EVAL_METRIC: kitti # train
+        # EVAL_METRIC: kitti # train
         EVAL_METRIC: waymo # test
 
-        NMS_CONFIG: # kitti
-            MULTI_CLASSES_NMS: False
-            NMS_TYPE: nms_gpu
-            NMS_THRESH: 0.01
-            NMS_PRE_MAXSIZE: 4096
-            NMS_POST_MAXSIZE: 500
+        # NMS_CONFIG: # kitti
+        #     MULTI_CLASSES_NMS: False
+        #     NMS_TYPE: nms_gpu
+        #     NMS_THRESH: 0.01
+        #     NMS_PRE_MAXSIZE: 4096
+        #     NMS_POST_MAXSIZE: 500
 
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 1
+    BATCH_SIZE_PER_GPU: 4
     NUM_EPOCHS: 80
 
     OPTIMIZER: adam_onecycle

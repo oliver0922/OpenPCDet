@@ -1,4 +1,4 @@
-DATASET: 'Openset_KittiDataset'
+DATASET: 'KittiDataset'
 DATA_PATH: '/home/OpenPCDet/data/kitti'
 
 POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 75.2, 75.2, 4]
@@ -7,13 +7,13 @@ DATA_SPLIT: {
     'train': train,
     'test': val
 }
-SHIFT_COOR: [0.0, 0.0, 1.6]
+
 INFO_PATH: {
-    'train': [kitti_infos_train.pkl],
+    'train': [kitti_infos_trainval.pkl],
     'test': [kitti_infos_val.pkl],
 }
 
-GET_ITEM_LIST: ["points","clip"]
+GET_ITEM_LIST: ["points"]
 FOV_POINTS_ONLY: True
 
 DATA_AUGMENTOR:
@@ -52,8 +52,8 @@ POINT_FEATURE_ENCODING: {
 
 
 DATA_PROCESSOR:
-    - NAME: mask_points_and_boxes_outside_range
-      REMOVE_OUTSIDE_BOXES: True
+    # - NAME: mask_points_and_boxes_outside_range
+    #   REMOVE_OUTSIDE_BOXES: True
 
     - NAME: shuffle_points
       SHUFFLE_ENABLED: {

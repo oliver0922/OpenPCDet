@@ -84,6 +84,9 @@ class DataProcessor(object):
         if data_dict.get('points', None) is not None:
             mask = common_utils.mask_points_by_range(data_dict['points'], self.point_cloud_range)
             data_dict['points'] = data_dict['points'][mask]
+            if 'clip' in data_dict.keys():
+                data_dict['clip'] = data_dict['clip'][mask]
+                data_dict['clip_mask'] = data_dict['clip_mask'][mask]
             if 'coords' in data_dict.keys():
                 data_dict['coords'] = data_dict['coords'][mask]
 
@@ -100,9 +103,11 @@ class DataProcessor(object):
             return partial(self.shuffle_points, config=config)
 
         if config.SHUFFLE_ENABLED[self.mode]:
-            if 'mask' in data_dict.keys():
+            if 'clip_mask' in data_dict.keys():
                 points = data_dict['points']
-                points = points[data_dict["mask"]]
+                clip_mask = data_dict['clip_mask']
+                points = points[clip_mask]
+                data_dict['clip'] = data_dict['clip'][clip_mask]
             else:
                 points = data_dict['points']
             shuffle_idx = np.random.permutation(points.shape[0])
@@ -111,7 +116,7 @@ class DataProcessor(object):
                 clip = data_dict['clip']
                 clip = clip[shuffle_idx]
                 data_dict['clip'] = clip
-                del data_dict['mask']
+                # del data_dict['mask']
             data_dict['points'] = points
         
                 
@@ -214,6 +219,97 @@ class DataProcessor(object):
                 self.voxel_generator_2 = VoxelGeneratorWrapper(
                                 vsize_xyz=config.CLIP_VOXEL_SIZE,
                                 coors_range_xyz=self.point_cloud_range,
+                                num_point_features= 772 if config.DATASET_NAME == 'KITTI' else 773,
+                                max_num_points_per_voxel=config.MAX_POINTS_PER_VOXEL,
+                                max_num_voxels=config.MAX_NUMBER_OF_VOXELS[self.mode],
+                            ) 	
+        
+        # point_voxel_generate_start_time = time.time()
+        
+        points = data_dict['points']
+        voxel_output = self.voxel_generator.generate(points)
+        voxels, coordinates, num_points = voxel_output
+
+        # point_voxel_generate_end_time = time.time()
+        
+        # print("point voxel_generation time: ",  point_voxel_generate_end_time-point_voxel_generate_start_time, "seonds")
+
+        if self.training and 'clip' in data_dict.keys():
+                
+                # clip_voxel_generate_start_time = time.time()
+                if config.DATASET_NAME == 'NUSCENES':
+                    clip = data_dict['clip']
+                    # point_torch = torch.Tensor(points)
+                    # point_with_clip = torch.cat((point_torch,clip),dim=-1)
+                    
+                    
+                    point_with_clip = np.concatenate((points,clip), axis=1)
+                    # voxel_output_2 = self.voxel_generator_2.generate(point_with_clip.float().cpu().detach().numpy())
+                    voxel_output_2 = self.voxel_generator_2.generate(point_with_clip)
+                    clip_voxels, clip_coordinates, clip_num_points = voxel_output_2
+                else:
+                    clip = data_dict['clip']
+                    voxel_output_2 = self.voxel_generator_2.generate(clip)
+                    clip_voxels, clip_coordinates, clip_num_points = voxel_output_2            
+            # clip_voxel_generate_end_time = time.time()
+            # print("clip voxel_generation time: ",  clip_voxel_generate_end_time-clip_voxel_generate_start_time, "seconds")    
+
+        if not data_dict['use_lead_xyz']:
+            voxels = voxels[..., 3:]  # remove xyz in voxels(N, 3)
+
+        if config.get('DOUBLE_FLIP', False):
+            voxels_list, voxel_coords_list, voxel_num_points_list = [voxels], [coordinates], [num_points]
+            points_yflip, points_xflip, points_xyflip = self.double_flip(points)
+            points_list = [points_yflip, points_xflip, points_xyflip]
+            keys = ['yflip', 'xflip', 'xyflip']
+            for i, key in enumerate(keys):
+                voxel_output = self.voxel_generator.generate(points_list[i])
+                voxels, coordinates, num_points = voxel_output
+
+                if not data_dict['use_lead_xyz']:
+                    voxels = voxels[..., 3:]
+                voxels_list.append(voxels)
+                voxel_coords_list.append(coordinates)
+                voxel_num_points_list.append(num_points)
+
+            data_dict['voxels'] = voxels_list
+            data_dict['voxel_coords'] = voxel_coords_list
+            data_dict['voxel_num_points'] = voxel_num_points_list
+        else:
+            data_dict['voxels'] = voxels
+            data_dict['voxel_coords'] = coordinates
+            data_dict['voxel_num_points'] = num_points
+            if self.training and 'clip' in data_dict.keys():
+                    data_dict['clip_voxels'] = clip_voxels
+                    data_dict['clip_voxel_coords'] = clip_coordinates
+                    data_dict['clip_voxel_num_points'] = clip_num_points
+        
+        # del data_dict['points'], data_dict['clip']
+        
+        return data_dict
+
+    def transform_masked_points_to_voxels_kitti(self, data_dict=None, config=None):
+        if data_dict is None:
+            grid_size = (self.point_cloud_range[3:6] - self.point_cloud_range[0:3]) / np.array(config.VOXEL_SIZE)
+            self.grid_size = np.round(grid_size).astype(np.int64)
+            self.voxel_size = config.VOXEL_SIZE
+            # just bind the config, we will create the VoxelGeneratorWrapper later,
+            # to avoid pickling issues in multiprocess spawn
+            return partial(self.transform_masked_points_to_voxels, config=config)
+
+        if self.voxel_generator is None:
+            self.voxel_generator = VoxelGeneratorWrapper(
+                vsize_xyz=config.VOXEL_SIZE,
+                coors_range_xyz=self.point_cloud_range,
+                num_point_features=self.num_point_features,
+                max_num_points_per_voxel=config.MAX_POINTS_PER_VOXEL,
+                max_num_voxels=config.MAX_NUMBER_OF_VOXELS[self.mode],
+            )
+
+        if self.training and 'clip' in data_dict.keys():
+                self.voxel_generator_2 = VoxelGeneratorWrapper(
+                                vsize_xyz=config.CLIP_VOXEL_SIZE,
+                                coors_range_xyz=self.point_cloud_range,
                                 num_point_features= 773,
                                 max_num_points_per_voxel=config.MAX_POINTS_PER_VOXEL,
                                 max_num_voxels=config.MAX_NUMBER_OF_VOXELS[self.mode],
@@ -279,8 +375,6 @@ class DataProcessor(object):
         # del data_dict['points'], data_dict['clip']
         
         return data_dict
-
-
     def sample_points(self, data_dict=None, config=None):
         if data_dict is None:
             return partial(self.sample_points, config=config)

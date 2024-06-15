@@ -5,7 +5,7 @@ from ...utils import common_utils
 from ...utils import box_utils
 
 
-def random_flip_along_x(gt_boxes, points, return_flip=False, enable=None):
+def random_flip_along_x(gt_boxes, points, return_flip=False, enable=None, clip=None):
     """
     Args:
         gt_boxes: (N, 7 + C), [x, y, z, dx, dy, dz, heading, [vx], [vy]]
@@ -19,10 +19,16 @@ def random_flip_along_x(gt_boxes, points, return_flip=False, enable=None):
         gt_boxes[:, 6] = -gt_boxes[:, 6]
         points[:, 1] = -points[:, 1]
         
+        if clip is not None:
+            clip[:, 1] = -clip[:, 1]
+        
         if gt_boxes.shape[1] > 7:
             gt_boxes[:, 8] = -gt_boxes[:, 8]
     if return_flip:
-        return gt_boxes, points, enable
+        if clip is not None:
+            return gt_boxes, points, enable, clip
+        else:
+            return gt_boxes, points, enable
     return gt_boxes, points
 
 
@@ -47,7 +53,7 @@ def random_flip_along_y(gt_boxes, points, return_flip=False, enable=None):
     return gt_boxes, points
 
 
-def global_rotation(gt_boxes, points, rot_range, return_rot=False, noise_rotation=None):
+def global_rotation(gt_boxes, points, rot_range, return_rot=False, noise_rotation=None, clip=None):
     """
     Args:
         gt_boxes: (N, 7 + C), [x, y, z, dx, dy, dz, heading, [vx], [vy]]
@@ -58,6 +64,9 @@ def global_rotation(gt_boxes, points, rot_range, return_rot=False, noise_rotatio
     if noise_rotation is None: 
         noise_rotation = np.random.uniform(rot_range[0], rot_range[1])
     points = common_utils.rotate_points_along_z(points[np.newaxis, :, :], np.array([noise_rotation]))[0]
+    if clip is not None:
+        clip = common_utils.rotate_points_along_z(clip[np.newaxis, :, :], np.array([noise_rotation]))[0]
+
     gt_boxes[:, 0:3] = common_utils.rotate_points_along_z(gt_boxes[np.newaxis, :, 0:3], np.array([noise_rotation]))[0]
     gt_boxes[:, 6] += noise_rotation
     if gt_boxes.shape[1] > 7:
@@ -67,11 +76,13 @@ def global_rotation(gt_boxes, points, rot_range, return_rot=False, noise_rotatio
         )[0][:, 0:2]
 
     if return_rot:
+        if clip is not None:
+            return gt_boxes, points, noise_rotation, clip
         return gt_boxes, points, noise_rotation
     return gt_boxes, points
 
 
-def global_scaling(gt_boxes, points, scale_range, return_scale=False):
+def global_scaling(gt_boxes, points, scale_range, return_scale=False, clip=None):
     """
     Args:
         gt_boxes: (N, 7), [x, y, z, dx, dy, dz, heading]
@@ -84,10 +95,14 @@ def global_scaling(gt_boxes, points, scale_range, return_scale=False):
     noise_scale = np.random.uniform(scale_range[0], scale_range[1])
     points[:, :3] *= noise_scale
     gt_boxes[:, :6] *= noise_scale
+    if clip is not None:
+        clip[:, :3] *= noise_scale
     if gt_boxes.shape[1] > 7:
         gt_boxes[:, 7:] *= noise_scale
         
     if return_scale:
+        if clip is not None:
+            return gt_boxes, points, noise_scale, clip
         return gt_boxes, points, noise_scale
     return gt_boxes, points
 
