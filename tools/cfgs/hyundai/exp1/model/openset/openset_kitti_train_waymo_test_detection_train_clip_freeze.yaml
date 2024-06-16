@@ -10,6 +10,8 @@ MODEL:
     TRAIN_CLIP: False
 
     NAME: Openset_CenterPoint
+    CLIP_FEATURE_SHAPE : [1, 188, 188]
+
 
     VFE:
         NAME: MeanVFE

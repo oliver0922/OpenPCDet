@@ -1,9 +1,10 @@
 CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist', 'objectness'] #train
-# CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist'] #test
+# CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist'] #test waymo
 
 DATA_CONFIG:
     _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/openset/openset_kitti_train_waymo_test_detection_freeze_clip_train_aug.yaml # train
-    # _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/waymo_dataset.yaml #test
+    # _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/waymo_dataset.yaml #test waymo
+
 
 MODEL:
 
@@ -97,7 +98,7 @@ MODEL:
 
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 32
+    BATCH_SIZE_PER_GPU: 1
     NUM_EPOCHS: 30
 
     OPTIMIZER: adam_onecycle

@@ -10,7 +10,7 @@ MODEL:
         NAME: MeanVFE
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 16
+    BATCH_SIZE_PER_GPU: 1
     NUM_EPOCHS: 20
 
     OPTIMIZER: adam_onecycle

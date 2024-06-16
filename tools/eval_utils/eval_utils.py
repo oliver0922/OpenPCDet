@@ -10,9 +10,9 @@ from pcdet.utils import common_utils
 
 
 
-import open3d
-from tools.visual_utils import open3d_vis_utils as V
-OPEN3D_FLAG = True
+# import open3d
+# from tools.visual_utils import open3d_vis_utils as V
+# OPEN3D_FLAG = True
 # except:
 # import mayavi.mlab as mlab
 # from tools.visual_utils import visualize_utils as V
