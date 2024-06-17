@@ -291,7 +291,7 @@
             "justMyCode": true,
             "args": [
                 "--cfg_file",
-                "./cfgs/hyundai/exp1/model/autoencoder/kitti_clip_autoencoder.yaml"
+                "./cfgs/hyundai/exp1/model/autoencoder/waymo_clip_autoencoder.yaml"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0",
@@ -431,6 +431,23 @@
             "cwd": "/home/OpenPCDet/tools"
         },
 
+        {
+            "name": "openset-waymo-train-kitti-test_detection_train_clip_freeze",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/hyundai/exp1/model/openset/openset_waymo_train_kitti_test_detection_train_clip_freeze.yaml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+
         // {
         //     "name": "baseline-kitti-train-kiti-test-test",
         //     "type": "python",
@@ -451,5 +468,49 @@
         //     },
         //     "cwd": "/home/OpenPCDet/tools"
         // },
+
+
+        {
+            "name": "openset-kitti-train-nuscenes-test_detection_freeze_clip_freeze",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/hyundai/exp2/model/openset/openset_kitti_train_nuscenes_test_detection_freeze_clip_freeze.yaml",
+                "--batch_size",
+                "1",
+                "--ckpt",
+                "/home/OpenPCDet/checkpoint_epoch_12.pth"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
+
+
+        {
+            "name": "openset-kitti-train-waymo-test_detection_freeze_clip_freeze",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/OpenPCDet/tools/test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--cfg_file",
+                "./cfgs/hyundai/exp1/model/openset/openset_kitti_train_waymo_test_detection_freeze_clip_freeze.yaml",
+                "--batch_size",
+                "1",
+                "--ckpt",
+                "/home/OpenPCDet/checkpoint_epoch_12.pth"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0"
+            },
+            "cwd": "/home/OpenPCDet/tools"
+        },
     ]
 }

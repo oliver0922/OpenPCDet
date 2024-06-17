@@ -95,7 +95,7 @@ class DataAugmentor(object):
             )
         else:
              gt_boxes, points, noise_rot = augmentor_utils.global_rotation(
-                data_dict['gt_boxes'], data_dict['points'], rot_range=rot_range, return_rot=True, clip = data_dict['clip']
+                data_dict['gt_boxes'], data_dict['points'], rot_range=rot_range, return_rot=True
             )           
         if 'roi_boxes' in data_dict.keys():
             num_frame, num_rois,dim = data_dict['roi_boxes'].shape

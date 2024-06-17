@@ -19,7 +19,7 @@ import torch
 #detection
 state_dict1_kitti = torch.load('/home/OpenPCDet/output/cfgs/hyundai/exp1/model/openset/openset_kitti_train_waymo_test_detection_train_clip_freeze/default/ckpt/checkpoint_epoch_80.pth')
 #reconstruction
-state_dict2_kitti = torch.load('/home/OpenPCDet/output/cfgs/hyundai/exp1/model/autoencoder/kitti_clip_autoencoder/default/ckpt/latest_model.pth')
+state_dict2_kitti = torch.load('/home/OpenPCDet/output/cfgs/hyundai/exp1/model/autoencoder/kitti_clip_autoencoder/default/ckpt/checkpoint_epoch_19.pth')
 
 combined_state_dict_kitti = {}
 

@@ -18,7 +18,7 @@ from functools import partial
 from ...ops.roiaware_pool3d import roiaware_pool3d_utils
 from ...utils import box_utils, common_utils
 from ..dataset import DatasetTemplate
-
+import pickle
 
 class Openset_WaymoDataset(DatasetTemplate):
     def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None):
@@ -84,6 +84,11 @@ class Openset_WaymoDataset(DatasetTemplate):
             for k in range(0, len(self.infos), self.dataset_cfg.SAMPLED_INTERVAL[mode]):
                 sampled_waymo_infos.append(self.infos[k])
             self.infos = sampled_waymo_infos
+            
+            # if "CLASS_AGNOSTIC" in self.dataset_cfg.keys() and self.dataset_cfg["CLASS_AGNOSTIC"] == True:
+            #     with open('/home/OpenPCDet/data/waymo/waymo_infos_train_sampling_5_agnostic.pkl', 'rb') as f:
+            #         self.infos = pickle.load(f)
+            del(self.infos[532])
             self.logger.info('Total sampled samples for Waymo dataset: %d' % len(self.infos))
             
         use_sequence_data = self.dataset_cfg.get('SEQUENCE_CONFIG', None) is not None and self.dataset_cfg.SEQUENCE_CONFIG.ENABLED
@@ -195,7 +200,10 @@ class Openset_WaymoDataset(DatasetTemplate):
 
     def get_lidar(self, sequence_name, sample_idx):
         lidar_file = self.data_path / sequence_name / ('%04d.npy' % sample_idx)
-        point_features = np.load(lidar_file)  # (N, 7): [x, y, z, intensity, elongation, NLZ_flag]
+        try:
+            point_features = np.load(lidar_file)  # (N, 7): [x, y, z, intensity, elongation, NLZ_flag]
+        except:
+            import pdb; pdb.set_trace()
 
         points_all, NLZ_flag = point_features[:, 0:5], point_features[:, 5]
         if not self.dataset_cfg.get('DISABLE_NLZ_FLAG_ON_POINTS', False):
@@ -212,11 +220,11 @@ class Openset_WaymoDataset(DatasetTemplate):
         # sample_idx = 00000
         # clip_path = self.root_path / 'training_openseg'/ sequence_name / ('%06d.npz' % sample_idx)
         clip_path = self.data_path / sequence_name / ('%04d_openseg.npz' % sample_idx)
-
+    
         clip_feature = np.load(clip_path)['feat']
         entire_mask = np.load(clip_path)['mask_full']
-        if clip_feature is not None:
-            clip_feature = np.concatenate((points,clip_feature), axis=1)
+        # if clip_feature is not None:
+        #     clip_feature = np.concatenate((points,clip_feature), axis=1)
             
         return clip_feature, entire_mask
 
@@ -365,17 +373,23 @@ class Openset_WaymoDataset(DatasetTemplate):
         sample_idx = pc_info['sample_idx']
         
         input_dict = {
-            'sample_idx': sample_idx
+            'sample_idx': sample_idx,
+            "db_flag": "Waymo"
         }
-        
+        if 'TRAIN_CLIP' in self.dataset_cfg:
+            input_dict['clip_train'] = self.dataset_cfg.TRAIN_CLIP   
         
         if self.use_shared_memory and index < self.shared_memory_file_limit:
             sa_key = f'{sequence_name}___{sample_idx}'
             points = SharedArray.attach(f"shm://{sa_key}").copy()
         else:
             points = self.get_lidar(sequence_name, sample_idx)
-            clip_feature, entire_mask = self.get_clip(sequence_name, sample_idx, points)
-            input_dict.update({"clip":clip_feature, "clip_mask":entire_mask})
+            if 'TRAIN_CLIP' in self.dataset_cfg.keys() and self.dataset_cfg['TRAIN_CLIP']==True:
+                clip_feature, entire_mask= self.get_clip(sequence_name, sample_idx, points)
+                clip_feature = clip_feature[entire_mask]
+                points = points[entire_mask]
+                clip_feature = np.concatenate((points, clip_feature), axis=1)                
+                input_dict.update({"clip":clip_feature})
 
         if self.dataset_cfg.get('SEQUENCE_CONFIG', None) is not None and self.dataset_cfg.SEQUENCE_CONFIG.ENABLED:
             points, num_points_all, sample_idx_pre_list, poses, pred_boxes, pred_scores, pred_labels = self.get_sequence_data(
@@ -393,6 +407,7 @@ class Openset_WaymoDataset(DatasetTemplate):
         input_dict.update({
             'points': points,
             'frame_id': info['frame_id'],
+            "db_flag": "Waymo"
         })
 
         if 'annos' in info:

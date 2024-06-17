@@ -86,7 +86,8 @@ class DataProcessor(object):
             data_dict['points'] = data_dict['points'][mask]
             if 'clip' in data_dict.keys():
                 data_dict['clip'] = data_dict['clip'][mask]
-                data_dict['clip_mask'] = data_dict['clip_mask'][mask]
+                if 'clip_mask' in data_dict.keys():
+                    data_dict['clip_mask'] = data_dict['clip_mask'][mask]
             if 'coords' in data_dict.keys():
                 data_dict['coords'] = data_dict['coords'][mask]
 

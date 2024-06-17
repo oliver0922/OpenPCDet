@@ -32,12 +32,16 @@ class Openset_CenterPoint(Detector3DTemplate):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         if model_cfg['TRAIN_CLIP']:
-            self.text_set = ['vegetation', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
-                'wall', 'fence', 'sidewalk', 'terrain', 'driveable_surface', 'manmade', 'car','truck', 'construction_vehicle', 'bus', 'trailer',
-                'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
-            self.excavator = ['suv','truck', 'construction_vehicle', 'bus', 'trailer',
-                'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
-                'wall', 'fence', 'sidewalk', 'terrain', 'driveable_surface', 'manmade']
+            # self.text_set = ['vegetation', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
+            #     'wall', 'fence', 'sidewalk', 'terrain', 'driveable_surface', 'manmade', 'car','truck', 'construction_vehicle', 'bus', 'trailer',
+            #     'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
+            # self.text_set = ['car','truck', 'construction_vehicle', 'bus', 'trailer',
+            #     'barrier', 'motorcycle', 'cyclist', 'pedestrian', 'traffic_cone', 'road', 'street', 'tree', 'building',
+            #      'fence', 'sidewalk', 'terrain'] # kitti train nuscenes test
+            
+            self.text_set = ['Vehicle', 'Pedestrian', 'Cyclist','Sign' 'road', 'street', 'tree', 'building',
+                 'fence', 'sidewalk', 'terrain'] # kitti train waymo test
+            
             
             # self.text_set = ['car','truck', 'construction_vehicle', 'bus', 'trailer',
             #       'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
@@ -89,8 +93,8 @@ class Openset_CenterPoint(Detector3DTemplate):
         
         for cur_module in self.module_list:
             if isinstance(cur_module, Openset_CenterHead) and self.mode=='TEST':
-                self.text_feats = self.text_extractor(self.excavator, device=self.device)
-                batch_dict = cur_module(batch_dict, self.decoder, self.text_feats)
+                self.text_feats = self.text_extractor(self.text_set, device=self.device)
+                batch_dict = cur_module(batch_dict, self.decoder, self.text_feats, frame_id= batch_dict['frame_id'])
             else:
                 batch_dict = cur_module(batch_dict)
 
@@ -155,11 +159,10 @@ class Openset_CenterPoint(Detector3DTemplate):
 
             import numpy as np
             import matplotlib.pyplot as plt
-            self.text_set = ['no_point','vegetation', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
+            self.text_set = ['vegetation', 'road', 'street', 'sky', 'tree', 'building', 'house', 'skyscaper',
               'wall', 'fence', 'sidewalk', 'terrain', 'driveable_surface', 'manmade', 'car','truck', 'construction_vehicle', 'bus', 'trailer',
               'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
             color_map = {
-            'no_point' : [1, 1, 1],
             'vegetation': [1, 0, 0],       # Red
             'road': [1, 0.5, 0],     # Orange
             'street': [1, 1, 0],       # Yellow
@@ -212,7 +215,7 @@ class Openset_CenterPoint(Detector3DTemplate):
             labels = list(color_map.keys())
             fig_legend = plt.figure(figsize=(10, 2))
             plt.figlegend(handles, labels, loc='center', ncol=4, fontsize='small')
-            plt.savefig("/home/OpenPCDet/visualization/prediction/with_bg_prediction_legend_pedestrian.png", dpi=300, bbox_inches='tight')
+            plt.savefig("/home/OpenPCDet/visualization/prediction/with_bg_prediction_legend.png", dpi=300, bbox_inches='tight')
             plt.close(fig_legend)
             ##########################
             
@@ -255,7 +258,7 @@ class Openset_CenterPoint(Detector3DTemplate):
             clip_rotated_feature = torch.flip(torch.transpose(clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
             plt.clf()         
             plt.imshow(clip_rotated_feature)
-            plt.savefig("/home/OpenPCDet/visualization/prediction/full/original/with_bg_prediction_original.png",dpi=300, bbox_inches='tight')
+            plt.savefig("/home/OpenPCDet/visualization/prediction/full/kitti/origin/with_bg_prediction_original.png",dpi=300, bbox_inches='tight')
             plt.axis('off')
             plt.clf() 
             plt.close('all')           
@@ -324,7 +327,7 @@ class Openset_CenterPoint(Detector3DTemplate):
             recon_clip_rotated_feature = torch.flip(torch.transpose(recon_clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
             plt.clf()         
             plt.imshow(recon_clip_rotated_feature)
-            plt.savefig("/home/OpenPCDet/visualization/prediction/full/recon/with_bg_prediction_reconstruction.png",dpi=300, bbox_inches='tight')
+            plt.savefig("/home/OpenPCDet/visualization/prediction/full/kitti/recon/with_bg_prediction_reconstruction.png",dpi=300, bbox_inches='tight')
             plt.axis('off')
             plt.clf() 
             plt.close('all')
@@ -360,7 +363,7 @@ class Openset_CenterPoint(Detector3DTemplate):
             pred_clip_rotated_feature = torch.flip(torch.transpose(pred_clip_flipped_feature, 0, 1), [0]).cpu().detach().numpy()
             plt.clf()         
             plt.imshow(pred_clip_rotated_feature)
-            plt.savefig("/home/OpenPCDet/visualization/prediction/full/preds/with_bg_prediction_from_centerpt_"+str(self.loss_type)+'mask'+str(self.mask)+"16_sample_1.png",dpi=300, bbox_inches='tight')
+            plt.savefig("/home/OpenPCDet/visualization/prediction/full/kitti/preds/with_bg_prediction_from_centerpt_"+str(self.loss_type)+'mask'+str(self.mask)+"16_sample_1.png",dpi=300, bbox_inches='tight')
             plt.axis('off')
             plt.clf() 
             plt.close('all')

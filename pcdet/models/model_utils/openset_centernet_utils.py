@@ -172,7 +172,8 @@ def _topk(scores, K=40):
 
 def decode_bbox_from_heatmap(heatmap, rot_cos, rot_sin, center, center_z, dim,
                              point_cloud_range=None, voxel_size=None, feature_map_stride=None, vel=None, iou=None, K=100,
-                             circle_nms=False, score_thresh=None, post_center_limit_range=None, clip=None, decoder=None, text_feat=None):
+                             circle_nms=False, score_thresh=None, post_center_limit_range=None, clip=None, decoder=None, text_feat=None,
+                             frame_id= None):
     batch_size, num_class, _, _ = heatmap.size()
 
     if circle_nms:
@@ -198,33 +199,50 @@ def decode_bbox_from_heatmap(heatmap, rot_cos, rot_sin, center, center_z, dim,
         
         
         clip_K = _transpose_and_gather_feat(clip, inds).view(batch_size, K, 16)
-        decoded_clip_K = decoder(clip_K).squeeze()
+        clip_K_flatten = clip_K.flatten(0,1)
+        decoded_clip_K = decoder(clip_K_flatten)
+        # decoded_clip_K = decoded_clip_K.view(-1, 768)
         decoded_clip_K_norm = (decoded_clip_K / (decoded_clip_K.norm(dim=1, keepdim=True)+1e-5)).half()
         class_preds = (text_feat @ decoded_clip_K_norm.T)
         max_score, max_indices = torch.max(class_preds, dim=0)
+        max_indices = max_indices.view(batch_size, K)
         max_indices_np = max_indices.cpu().detach().numpy()
-        class_indices_1 = np.where(max_indices_np == 0)[0] # car
-        class_indices_2 = np.where(max_indices_np == 1)[0] # truck
-        class_indices_3 = np.where(max_indices_np == 2)[0] # construction_vehicle
-        class_indices_4 = np.where(max_indices_np == 3)[0] # bus
-        class_indices_5 = np.where(max_indices_np == 4)[0] # trailer
-        class_indices_6 = np.where(max_indices_np == 5)[0] # barrier
-        class_indices_7 = np.where(max_indices_np == 6)[0] # motorcycle
-        class_indices_8 = np.where(max_indices_np == 7)[0] # bicycle
-        class_indices_9 = np.where(max_indices_np == 8)[0] # pedestrian
-        class_indices_10 = np.where(max_indices_np == 9)[0] # traffic_cone
-        class_ids[:,class_indices_1]  = 1 #car
-        class_ids[:,class_indices_2]  = 2 #truck
-        class_ids[:,class_indices_3]  = 3 # construction_vehicle
-        class_ids[:,class_indices_4]  = 4 # bus
-        class_ids[:,class_indices_5]  = 5 # trailer
-        class_ids[:,class_indices_6]  = 6 # barrier
-        class_ids[:,class_indices_7]  = 7 # motorcycle
-        class_ids[:,class_indices_8]  = 8 # bicycle
-        class_ids[:,class_indices_9]  = 9 # pedestrian
-        class_ids[:,class_indices_10]  = 10 # traffic_cone
-        # score_masked_indices = (max_score>0.08).nonzero(as_tuple=True)[0]
         
+        
+        ################## nuscenes #####################
+        # class_indices_1 = np.where(max_indices_np == 0) # car
+        # class_indices_2 = np.where(max_indices_np == 1) # truck
+        # class_indices_3 = np.where(max_indices_np == 2) # construction_vehicle
+        # class_indices_4 = np.where(max_indices_np == 3) # bus
+        # class_indices_5 = np.where(max_indices_np == 4) # trailer
+        # class_indices_6 = np.where(max_indices_np == 5) # barrier
+        # class_indices_7 = np.where(max_indices_np == 6) # motorcycle
+        # class_indices_8 = np.where(max_indices_np == 7) # bicycle
+        # class_indices_9 = np.where(max_indices_np == 8) # pedestrian
+        # class_indices_10 = np.where(max_indices_np == 9) # traffic_cone
+        # class_ids[class_indices_1]  = 1 #car
+        # class_ids[class_indices_2]  = 2 #truck
+        # class_ids[class_indices_3]  = 3 # construction_vehicle
+        # class_ids[class_indices_4]  = 4 # bus
+        # class_ids[class_indices_5]  = 5 # trailer
+        # class_ids[class_indices_6]  = 6 # barrier
+        # class_ids[class_indices_7]  = 7 # motorcycle
+        # class_ids[class_indices_8]  = 8 # bicycle
+        # class_ids[class_indices_9]  = 9 # pedestrian
+        # class_ids[class_indices_10]  = 10 # traffic_cone
+        #####################################################
+        
+        ################# waymo ##############################
+        class_indices_1 = np.where(max_indices_np == 0) # Vehicle
+        class_indices_2 = np.where(max_indices_np == 1) # Pedestrian
+        class_indices_3 = np.where(max_indices_np == 2) # Cyclist
+        class_indices_4 = np.where(max_indices_np == 3) # Sign
+        class_ids[class_indices_1]  = 1 # Vehicle
+        class_ids[class_indices_2]  = 2 # Pedestrian
+        class_ids[class_indices_3]  = 3 # Cyclist
+        class_ids[class_indices_4]  = 4 # Sign      
+     
+        ############################################################
         
     
 
@@ -244,6 +262,14 @@ def decode_bbox_from_heatmap(heatmap, rot_cos, rot_sin, center, center_z, dim,
         iou = _transpose_and_gather_feat(iou, inds).view(batch_size, K)
 
     final_box_preds = torch.cat((box_part_list), dim=-1)
+    
+    # if clip is not None:
+    #     class_mask = (class_ids != 0)
+    #     final_class_ids = class_ids[class_mask]
+    #     final_scores = scores[class_mask]
+    #     final_box_preds = final_box_preds[class_mask]
+    
+
     final_scores = scores.view(batch_size, K)
     final_class_ids = class_ids.view(batch_size, K)
 
@@ -258,11 +284,19 @@ def decode_bbox_from_heatmap(heatmap, rot_cos, rot_sin, center, center_z, dim,
 
     
     for k in range(batch_size):
-        cur_mask = mask[k]
-        cur_boxes = final_box_preds[k, cur_mask]
-        cur_scores = final_scores[k, cur_mask]
-        cur_labels = final_class_ids[k, cur_mask]
 
+        if clip is not None:
+            class_mask = (class_ids[k] != 0)
+            cur_mask = class_mask & mask[k]
+            cur_boxes = final_box_preds[k, cur_mask]
+            cur_scores = final_scores[k, cur_mask]
+            cur_labels = final_class_ids[k, cur_mask]      
+        else:
+            cur_mask = mask[k]
+            cur_boxes = final_box_preds[k, cur_mask]
+            cur_scores = final_scores[k, cur_mask]
+            cur_labels = final_class_ids[k, cur_mask]
+        
         if circle_nms:
             assert False, 'not checked yet'
             centers = cur_boxes[:, [0, 1]]

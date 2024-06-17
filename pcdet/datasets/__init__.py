@@ -88,7 +88,7 @@ def build_dataloader(dataset_cfg, class_names, batch_size, dist, root_path=None,
         shuffle=(sampler is None) and training, collate_fn=dataset.collate_batch,
         drop_last=False, sampler=sampler, timeout=0, worker_init_fn=partial(common_utils.worker_init_fn, seed=seed)
     )
-    ### shuffle false
+    ## shuffle false
     # dataloader = DataLoader(
     #     dataset, batch_size=batch_size, pin_memory=True, num_workers=workers,
     #     shuffle=False and training, collate_fn=dataset.collate_batch,

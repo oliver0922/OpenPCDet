@@ -251,7 +251,7 @@ class Openset_Waymo_CenterPoint(Detector3DTemplate):
             plt.clf() 
             plt.close('all')           
             
-            ############ kitti gt #############
+            ############ gt #############
             points = batch_dict['points'][:, 1:]
             gt_boxes = batch_dict['gt_boxes'][0][:,:7]
             gt_labels =  batch_dict['gt_boxes'][0][:,7]

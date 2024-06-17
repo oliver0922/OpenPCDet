@@ -1,8 +1,8 @@
-CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist', 'objectness'] #train
-# CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist'] #test
+CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'objectness'] #train
+
 
 DATA_CONFIG:
-    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/openset/openset_kitti_train_waymo_test_detection_train_clip_freeze_aug.yaml # train
+    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/openset/openset_waymo_train_kitti_test_detection_train_clip_freeze.yaml # train
     # _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/waymo_dataset.yaml #test
 
 MODEL:
@@ -10,6 +10,8 @@ MODEL:
     TRAIN_CLIP: False
 
     NAME: Openset_CenterPoint
+    CLIP_FEATURE_SHAPE : [1, 188, 188]
+
 
     VFE:
         NAME: MeanVFE
@@ -37,7 +39,7 @@ MODEL:
         CLIP_TRAIN: False
 
         CLASS_NAMES_EACH_HEAD: [
-            [ 'Car', 'Pedestrian', 'Cyclist' ],
+            ['Vehicle', 'Pedestrian', 'Cyclist'], #train
             ['objectness'] #train
             # [ 'Vehicle', 'Pedestrian', 'Cyclist' ] #test        
         ]
@@ -94,8 +96,8 @@ MODEL:
 
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 4
-    NUM_EPOCHS: 100
+    BATCH_SIZE_PER_GPU: 16
+    NUM_EPOCHS: 30
 
     OPTIMIZER: adam_onecycle
     LR: 0.003

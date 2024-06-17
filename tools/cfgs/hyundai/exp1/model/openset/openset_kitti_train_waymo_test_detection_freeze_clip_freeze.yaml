@@ -1,15 +1,17 @@
-CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist', 'objectness'] #train
-# CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist'] #test
+# CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist', 'objectness'] #train
+CLASS_NAMES: [ 'Vehicle', 'Pedestrian', 'Cyclist', 'Sign' ] #test waymo
 
 DATA_CONFIG:
-    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/openset/openset_kitti_train_waymo_test_detection_train_clip_freeze_aug.yaml # train
-    # _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/waymo_dataset.yaml #test
+    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/hyundai/exp1/dataset/openset/openset_kitti_train_waymo_test_detection_freeze_clip_freeze.yaml #test nuscenes
+
 
 MODEL:
 
-    TRAIN_CLIP: False
+    TRAIN_CLIP: True
 
     NAME: Openset_CenterPoint
+    CLIP_FEATURE_SHAPE : [1, 188, 188]
+    LOSS: mse
 
     VFE:
         NAME: MeanVFE
@@ -34,12 +36,15 @@ MODEL:
     DENSE_HEAD:
         NAME: Openset_CenterHead
         CLASS_AGNOSTIC: False
-        CLIP_TRAIN: False
+        CLIP_TRAIN: True
 
         CLASS_NAMES_EACH_HEAD: [
-            [ 'Car', 'Pedestrian', 'Cyclist' ],
-            ['objectness'] #train
-            # [ 'Vehicle', 'Pedestrian', 'Cyclist' ] #test        
+            # [ 'Car', 'Pedestrian', 'Cyclist' ],
+            # ['objectness'] #train
+            [ 'Vehicle', 'Pedestrian', 'Cyclist' ], #test
+            # [ 'car', 'pedestrian', 'bicycle' ],
+            ['objectness'] #test
+
         ]
 
         SHARED_CONV_CHANNEL: 64
@@ -53,6 +58,7 @@ MODEL:
                 'dim': {'out_channels': 3, 'num_conv': 2},
                 'rot': {'out_channels': 2, 'num_conv': 2},
                 'clip': {'out_channels': 768, 'num_conv': 2}
+
             }
 
         TARGET_ASSIGNER_CONFIG:
@@ -80,7 +86,7 @@ MODEL:
     POST_PROCESSING:
         RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
         # SCORE_THRESH: 0.1 #kitti
-        OUTPUT_RAW_SCORE: False
+        # OUTPUT_RAW_SCORE: False
 
         # EVAL_METRIC: kitti # train
         EVAL_METRIC: waymo # test
@@ -94,8 +100,8 @@ MODEL:
 
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 4
-    NUM_EPOCHS: 100
+    BATCH_SIZE_PER_GPU: 64
+    NUM_EPOCHS: 30
 
     OPTIMIZER: adam_onecycle
     LR: 0.003

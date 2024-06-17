@@ -154,9 +154,14 @@ class Openset_CenterHead(nn.Module):
                 [self.class_names.index(x) for x in cur_class_names if x in class_names]
             )).cuda()
             self.class_id_mapping_each_head.append(cur_class_id_mapping)
+        
+        self.class_names_each_head[-1] = ['objectness']
+        # self.class_id_mapping_each_head[-1] = torch.tensor(range(10), device='cuda') ####### kitti train nuscenes test  #######
+        self.class_id_mapping_each_head[-1] = torch.tensor(range(4), device='cuda')  ####### kitti train waymo test  #######
+        
             
         total_classes = sum([len(x) for x in self.class_names_each_head])
-        assert total_classes == len(self.class_names), f'class_names_each_head={self.class_names_each_head}'
+        # assert total_classes == len(self.class_names), f'class_names_each_head={self.class_names_each_head}'
 
         norm_func = partial(nn.BatchNorm2d, eps=self.model_cfg.get('BN_EPS', 1e-5), momentum=self.model_cfg.get('BN_MOM', 0.1))
         self.shared_conv = nn.Sequential(
@@ -407,7 +412,7 @@ class Openset_CenterHead(nn.Module):
             print("Loss is NaN")
         return loss, tb_dict
 
-    def generate_predicted_boxes(self, batch_size, pred_dicts, decoder=None, text_feat=None):
+    def generate_predicted_boxes(self, batch_size, pred_dicts, decoder=None, text_feat=None, frame_id=None):
         post_process_cfg = self.model_cfg.POST_PROCESSING
         post_center_limit_range = torch.tensor(post_process_cfg.POST_CENTER_LIMIT_RANGE).cuda().float()
 
@@ -436,16 +441,18 @@ class Openset_CenterHead(nn.Module):
                 circle_nms=(post_process_cfg.NMS_CONFIG.NMS_TYPE == 'circle_nms'),
                 score_thresh=post_process_cfg.SCORE_THRESH,
                 post_center_limit_range=post_center_limit_range,
-                clip = pred_dict['clip'] if idx==6 else None,
-                decoder = decoder if idx == 6 else None,
-                text_feat = text_feat if idx ==6 else None
+                clip = pred_dict['clip'] if idx==len(pred_dicts)-1 else None,
+                decoder = decoder if idx == len(pred_dicts)-1 else None,
+                text_feat = text_feat if idx ==len(pred_dicts)-1 else None,
+                frame_id = frame_id
             )
 
             for k, final_dict in enumerate(final_pred_dicts):
-                # if idx == 6:
+                if idx == len(pred_dicts)-1:
                 #     self.class_id_mapping_each_head[6]
-                #     self.class_id_mapping_each_head[6][final_dict['pred_labels'].long()]
-                final_dict['pred_labels'] = self.class_id_mapping_each_head[idx][final_dict['pred_labels'].long()]
+                    final_dict['pred_labels'] = self.class_id_mapping_each_head[-1][final_dict['pred_labels'].long()-1]
+                else:
+                    final_dict['pred_labels'] = self.class_id_mapping_each_head[idx][final_dict['pred_labels'].long()]
 
                 if post_process_cfg.get('USE_IOU_TO_RECTIFY_SCORE', False) and 'pred_iou' in final_dict:
                     pred_iou = torch.clamp(final_dict['pred_iou'], min=0, max=1.0)
@@ -501,7 +508,7 @@ class Openset_CenterHead(nn.Module):
             roi_labels[bs_idx, :num_boxes] = pred_dicts[bs_idx]['pred_labels']
         return rois, roi_scores, roi_labels
 
-    def forward(self, data_dict, decoder=None, text_feat=None):
+    def forward(self, data_dict, decoder=None, text_feat=None, frame_id=None):
         spatial_features_2d = data_dict['spatial_features_2d']
         x = self.shared_conv(spatial_features_2d)
 
@@ -523,7 +530,7 @@ class Openset_CenterHead(nn.Module):
 
         if not self.training or self.predict_boxes_when_training:
             pred_dicts = self.generate_predicted_boxes(
-                data_dict['batch_size'], pred_dicts, decoder,text_feat
+                data_dict['batch_size'], pred_dicts, decoder, text_feat, frame_id
             )
 
             if self.predict_boxes_when_training:
