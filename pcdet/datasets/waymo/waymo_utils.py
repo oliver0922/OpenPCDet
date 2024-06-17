@@ -20,6 +20,7 @@ except:
 WAYMO_CLASSES = ['unknown', 'Vehicle', 'Pedestrian', 'Sign', 'Cyclist']
 
 
+
 def generate_labels(frame, pose):
     obj_name, difficulty, dimensions, locations, heading_angles = [], [], [], [], []
     tracking_difficulty, speeds, accelerations, obj_ids = [], [], [], []
@@ -68,6 +69,10 @@ def generate_labels(frame, pose):
         gt_boxes_lidar = np.zeros((0, 9))
     annotations['gt_boxes_lidar'] = gt_boxes_lidar
     return annotations
+
+
+
+
 
 
 def convert_range_image_to_point_cloud(frame, range_images, camera_projections, range_image_top_pose, ri_index=(0, 1)):
@@ -191,10 +196,9 @@ def save_lidar_points(frame, cur_save_path, use_two_returns=True):
 
     np.save(cur_save_path, save_points)
     # print('saving to ', cur_save_path)
-    return num_points_of_each_lidar
+    return num_points_of_each_lidar, points_all
 
-
-def process_single_sequence(sequence_file, save_path, sampled_interval, has_label=True, use_two_returns=True, update_info_only=False):
+def process_single_sequence(sequence_file, save_path, sampled_interval, has_label=True, use_two_returns=True, update_info_only=False, openseg_model=None):
     sequence_name = os.path.splitext(os.path.basename(sequence_file))[0]
 
     # print('Load record (sampled_interval=%d): %s' % (sampled_interval, sequence_name))
@@ -235,10 +239,13 @@ def process_single_sequence(sequence_file, save_path, sampled_interval, has_labe
             'timestamp_micros': frame.timestamp_micros
         }
         image_info = {}
+
         for j in range(5):
             width = frame.context.camera_calibrations[j].width
             height = frame.context.camera_calibrations[j].height
             image_info.update({'image_shape_%d' % j: (height, width)})
+
+
         info['image'] = image_info
 
         pose = np.array(frame.pose.transform, dtype=np.float32).reshape(4, 4)
@@ -250,11 +257,39 @@ def process_single_sequence(sequence_file, save_path, sampled_interval, has_labe
 
         if update_info_only and sequence_infos_old is not None:
             assert info['frame_id'] == sequence_infos_old[cnt]['frame_id']
-            num_points_of_each_lidar = sequence_infos_old[cnt]['num_points_of_each_lidar']
+            num_points_of_each_lidar, points_all = sequence_infos_old[cnt]['num_points_of_each_lidar']
         else:
-            num_points_of_each_lidar = save_lidar_points(
+            num_points_of_each_lidar, points_all = save_lidar_points(
                 frame, cur_save_dir / ('%04d.npy' % cnt), use_two_returns=use_two_returns
             )
+        
+
+        count = np.zeros((len(points_all), 1), dtype=np.int8)
+        feat_3d = np.zeros((len(points_all), 768), dtype=np.float16)
+
+        for j in range(5):
+            img = frame.images[j]
+            img_size = tf.image.decode_jpeg(img).numpy().shape[0:2]
+            resize_img_size = [480, 480*img_size[1]//img_size[0]]
+
+            clip_feature_2d = extract_openseg_img_feature(img, openseg_model, regional_pool=True, img_size=(resize_img_size[1], resize_img_size[0]))
+            
+            intrinsic = adjust_intrinsic(frame.context.camera_calibrations[j].intrinsic, [img_size[0], img_size[1]], resize_img_size)
+
+            mapping = compute_mapping(frame.context.camera_calibrations[j].extrinsic, points_all, 
+                            depth=None, intrinsic=intrinsic, image_dim=(resize_img_size[0], resize_img_size[1]))
+
+            mask = mapping[:, 3]
+            feat_3d += clip_feature_2d[:, mapping[:, 0], mapping[:, 1]].permute(1, 0).half().numpy()
+            feat_2d_3d = clip_feature_2d[:, mapping[:, 1], mapping[:, 2]].permute(1, 0)
+            count[mask!=0]+= 1
+            feat_3d[mask!=0] += feat_2d_3d[mask!=0]
+
+        mask_full = count > 0
+        count[count==0] = 1e-5
+        feat_3d = feat_3d/count
+        np.savez_compressed(os.path.join(cur_save_dir, f'{str(index).zfill(4)}_openseg.npz'), feat = feat_3d, mask_full = mask_full)
+
         info['num_points_of_each_lidar'] = num_points_of_each_lidar
 
         sequence_infos.append(info)

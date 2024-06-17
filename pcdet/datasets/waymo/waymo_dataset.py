@@ -19,6 +19,8 @@ from ...ops.roiaware_pool3d import roiaware_pool3d_utils
 from ...utils import box_utils, common_utils
 from ..dataset import DatasetTemplate
 
+import tensorflow as tf2
+
 
 class WaymoDataset(DatasetTemplate):
     def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None):
@@ -175,10 +177,12 @@ class WaymoDataset(DatasetTemplate):
         from . import waymo_utils
         print('---------------The waymo sample interval is %d, total sequecnes is %d-----------------'
               % (sampled_interval, len(self.sample_sequence_list)))
+        
+        openseg_model = tf2.saved_model.load('/root/code/openseg_exported_clip', tags=[tf.saved_model.tag_constants.SERVING],)
 
         process_single_sequence = partial(
             waymo_utils.process_single_sequence,
-            save_path=save_path, sampled_interval=sampled_interval, has_label=has_label, update_info_only=update_info_only
+            save_path=save_path, sampled_interval=sampled_interval, has_label=has_label, update_info_only=update_info_only, openseg_model=openseg_model
         )
         sample_sequence_file_list = [
             self.check_sequence_name_with_all_version(raw_data_path / sequence_file)
