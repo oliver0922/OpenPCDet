@@ -1,0 +1,12 @@
+lidar:
+  channel : 64
+  VFoV_max : 2
+  VFoV_min : -24.9
+  Horizontal_res : 2048
+  rotational_rate : 20 # rotation Hz 
+  range_min : 2
+  range_max : 120
+  rotation_direction : 1 #[-1, 1] for ccw, cw 
+  initial_scan : 180 # degree for initial scan, generaly 0 or 180
+  velocity : 10  # m/s
+  vector : [1, 0] #x, y, should be normalized 

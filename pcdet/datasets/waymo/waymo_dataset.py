@@ -19,6 +19,10 @@ from ...ops.roiaware_pool3d import roiaware_pool3d_utils
 from ...utils import box_utils, common_utils
 from ..dataset import DatasetTemplate
 
+import tensorflow as tf2
+
+from .lidomaug import LiDomAug
+
 
 class WaymoDataset(DatasetTemplate):
     def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None):
@@ -44,6 +48,8 @@ class WaymoDataset(DatasetTemplate):
             )
         else:
             self.pred_boxes_dict = {}
+
+        self.augmentation = LiDomAug('./lidomaug_config/LiDAR_config_v64.yaml')
 
     def set_split(self, split):
         super().__init__(
@@ -175,10 +181,12 @@ class WaymoDataset(DatasetTemplate):
         from . import waymo_utils
         print('---------------The waymo sample interval is %d, total sequecnes is %d-----------------'
               % (sampled_interval, len(self.sample_sequence_list)))
+        
+        openseg_model = tf2.saved_model.load('/root/code/openseg_exported_clip', tags=[tf.saved_model.tag_constants.SERVING],)
 
         process_single_sequence = partial(
             waymo_utils.process_single_sequence,
-            save_path=save_path, sampled_interval=sampled_interval, has_label=has_label, update_info_only=update_info_only
+            save_path=save_path, sampled_interval=sampled_interval, has_label=has_label, update_info_only=update_info_only, openseg_model=openseg_model
         )
         sample_sequence_file_list = [
             self.check_sequence_name_with_all_version(raw_data_path / sequence_file)
@@ -195,11 +203,7 @@ class WaymoDataset(DatasetTemplate):
 
     def get_lidar(self, sequence_name, sample_idx):
         lidar_file = self.data_path / sequence_name / ('%04d.npy' % sample_idx)
-        try:
-            point_features = np.load(lidar_file)  # (N, 7): [x, y, z, intensity, elongation, NLZ_flag]
-        except:
-            print(lidar_file)
-            import pdb; pdb.set_trace()
+        point_features = np.load(lidar_file)  # (N, 7): [x, y, z, intensity, elongation, NLZ_flag]
 
         points_all, NLZ_flag = point_features[:, 0:5], point_features[:, 5]
         if not self.dataset_cfg.get('DISABLE_NLZ_FLAG_ON_POINTS', False):
@@ -210,6 +214,35 @@ class WaymoDataset(DatasetTemplate):
             for dim_idx in self.dataset_cfg.POINTS_TANH_DIM:
                 points_all[:, dim_idx] = np.tanh(points_all[:, dim_idx])
         return points_all
+
+    def get_pose_meta(self, sequence_name):
+        poses_file = self.data_path / sequence_name / 'poses.npy'
+        poses = np.load(poses_file)
+        return poses
+
+    def aggregation(self, sequence_name, index):
+        poses = self.get_pose_meta(sequence_name)
+        pose_0 = poses[index]
+        pts = []
+        pts_feat = []
+        range_num = [-10, 10]
+        for idx in range(index + range_num[0], index + range_num[1]):
+            try:
+                points_all = self.get_lidar(sequence_name, idx)
+                pose = poses[idx]
+            except:
+                continue
+            points = points_all[:, :3]
+            point_features = points_all[:, 3:]
+            points_h = np.concatenate([points, np.ones((points.shape[0], 1))], axis=-1)
+            points_h = np.dot(points_h, pose.T)[:, :3]
+            pts.append(points_h)
+            pts_feat.append(point_features)
+        pts = np.concatenate(pts, axis=0)
+        pts_feat = np.concatenate(pts_feat, axis=0)
+        pts = np.dot(pts, np.linalg.inv(pose_0).T)
+
+        return pts[:, :3], pts_feat
 
     @staticmethod
     def transform_prebox_to_current(pred_boxes3d, pose_pre, pose_cur):
@@ -356,11 +389,19 @@ class WaymoDataset(DatasetTemplate):
         input_dict = {
             'sample_idx': sample_idx
         }
+        
         if self.use_shared_memory and index < self.shared_memory_file_limit:
             sa_key = f'{sequence_name}___{sample_idx}'
             points = SharedArray.attach(f"shm://{sa_key}").copy()
+    
         else:
-            points = self.get_lidar(sequence_name, sample_idx)
+            if self.augmentation:
+                points, points_feat = self.aggregation(sequence_name, sample_idx)
+                points, ind= self.augmentation.generate_frame(points, False, False)
+                points_feat = points_feat[ind, :]
+                points = np.concatenate([points, points_feat], axis=1)
+            else:
+                points = self.get_lidar(sequence_name, sample_idx)
 
         if self.dataset_cfg.get('SEQUENCE_CONFIG', None) is not None and self.dataset_cfg.SEQUENCE_CONFIG.ENABLED:
             points, num_points_all, sample_idx_pre_list, poses, pred_boxes, pred_scores, pred_labels = self.get_sequence_data(
@@ -384,7 +425,7 @@ class WaymoDataset(DatasetTemplate):
             annos = info['annos']
             annos = common_utils.drop_info_with_name(annos, name='unknown')
 
-            if self.dataset_cfg.get('INFO_WITH_FAKELIDAR', False): ### x
+            if self.dataset_cfg.get('INFO_WITH_FAKELIDAR', False):
                 gt_boxes_lidar = box_utils.boxes3d_kitti_fakelidar_to_lidar(annos['gt_boxes_lidar'])
             else:
                 gt_boxes_lidar = annos['gt_boxes_lidar']
