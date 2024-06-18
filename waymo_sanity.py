@@ -60,6 +60,8 @@ if __name__ == '__main__':
 
         try:
             point_features = np.load(openseg_file) # (N, 6): [x, y, z, intensity, elongation, NLZ_flag]
+            feat = point_features['feat']
+            mask_full = point_features['mask_full']
         except: 
             print('Openseg : ',openseg_file)
         
