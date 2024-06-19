@@ -1,7 +1,10 @@
-CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist']
+# CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist'] #train
+CLASS_NAMES: ['car', 'pedestrian', 'bicycle'] #test
 
 DATA_CONFIG:
-    _BASE_CONFIG_: cfgs/dataset_configs/waymo_dataset_sampling_10.yaml
+    # _BASE_CONFIG_: cfgs/dataset_configs/waymo_dataset_sampling_20.yaml #train
+    # _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/dataset_configs/kitti_dataset_hyundai.yaml #test
+    _BASE_CONFIG_: /home/OpenPCDet/tools/cfgs/dataset_configs/nuscenes_dataset_hyundai.yaml #test
 
 MODEL:
     NAME: CenterPoint
@@ -30,7 +33,8 @@ MODEL:
         CLASS_AGNOSTIC: False
 
         CLASS_NAMES_EACH_HEAD: [
-            ['Vehicle', 'Pedestrian', 'Cyclist']
+            # ['Vehicle', 'Pedestrian', 'Cyclist'] #train
+            ['car', 'pedestrian', 'bicycle'] #test
         ]
 
         SHARED_CONV_CHANNEL: 64

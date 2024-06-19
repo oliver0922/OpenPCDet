@@ -10,7 +10,7 @@ from ...utils.spconv_utils import replace_feature, spconv
 from nuscenes.nuscenes import NuScenes
 
 
-CHECK_VIZ = True
+CHECK_VIZ = False
 
 
 class Openset_CenterPoint_Recon_clip(Detector3DTemplate):

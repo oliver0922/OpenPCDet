@@ -34,6 +34,7 @@ class NuScenesDataset(DatasetTemplate):
         self.logger.info('Loading NuScenes dataset')
         nuscenes_infos = []
 
+        # import pdb; pdb.set_trace()
         for info_path in self.dataset_cfg.INFO_PATH[mode]:
             info_path = self.root_path / info_path
             if not info_path.exists():

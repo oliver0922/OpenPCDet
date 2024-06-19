@@ -2,15 +2,16 @@ import argparse
 import glob
 from pathlib import Path
 
-try:
-    import open3d
-    from visual_utils import open3d_vis_utils as V
-    OPEN3D_FLAG = True
+#try:
+import open3d
+from visual_utils import open3d_vis_utils as V
+OPEN3D_FLAG = True
+'''
 except:
     import mayavi.mlab as mlab
     from visual_utils import visualize_utils as V
     OPEN3D_FLAG = False
-
+'''
 import numpy as np
 import torch
 
@@ -18,6 +19,9 @@ from pcdet.config import cfg, cfg_from_yaml_file
 from pcdet.datasets import DatasetTemplate
 from pcdet.models import build_network, load_data_to_gpu
 from pcdet.utils import common_utils
+from pcdet.datasets import build_dataloader
+
+import os
 
 
 class DemoDataset(DatasetTemplate):
@@ -80,31 +84,49 @@ def main():
     args, cfg = parse_config()
     logger = common_utils.create_logger()
     logger.info('-----------------Quick Demo of OpenPCDet-------------------------')
-    demo_dataset = DemoDataset(
-        dataset_cfg=cfg.DATA_CONFIG, class_names=cfg.CLASS_NAMES, training=False,
-        root_path=Path(args.data_path), ext=args.ext, logger=logger
+    test_set, test_loader, sampler = build_dataloader(
+        dataset_cfg=cfg.DATA_CONFIG,
+        class_names=cfg.CLASS_NAMES,
+        batch_size=1,
+        dist=False, workers=0, logger=logger, training=False
     )
-    logger.info(f'Total number of samples: \t{len(demo_dataset)}')
 
-    model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=demo_dataset)
+    logger.info(f'Total number of samples: \t{len(test_set)}')
+
+    model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=test_set)
     model.load_params_from_file(filename=args.ckpt, logger=logger, to_cpu=True)
     model.cuda()
     model.eval()
+
+    save_path = '/data/hyundai_output'
+
     with torch.no_grad():
-        for idx, data_dict in enumerate(demo_dataset):
+        for idx, data_dict in enumerate(test_set):
             logger.info(f'Visualized sample index: \t{idx + 1}')
-            data_dict = demo_dataset.collate_batch([data_dict])
+            data_dict = test_set.collate_batch([data_dict])
             load_data_to_gpu(data_dict)
             pred_dicts, _ = model.forward(data_dict)
 
+            points = data_dict['points'][:, 1:]
+            gt_boxes = data_dict['final_box_dicts'][0]
+            pred_boxes = pred_dicts[0]
+
+            #import pdb; pdb.set_trace()
+
+            #torch.save(points, os.path.join(save_path, str(idx).zfill(6)+'_points.npz'))
+            torch.save(gt_boxes, os.path.join(save_path, data_dict['frame_id'][0]+'_gt.pt'))
+            torch.save(pred_boxes, os.path.join(save_path, data_dict['frame_id'][0]+'_pred.pt'))
+
+            '''
             V.draw_scenes(
                 points=data_dict['points'][:, 1:], ref_boxes=pred_dicts[0]['pred_boxes'],
-                ref_scores=pred_dicts[0]['pred_scores'], ref_labels=pred_dicts[0]['pred_labels']
+                ref_scores=pred_dicts[0]['pred_scores'], ref_labels=pred_dicts[0]['pred_labels'],
+                index = idx
             )
-
+            
             if not OPEN3D_FLAG:
                 mlab.show(stop=True)
-
+            '''
     logger.info('Demo done.')
 
 

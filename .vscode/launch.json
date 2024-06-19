@@ -291,7 +291,9 @@
             "justMyCode": true,
             "args": [
                 "--cfg_file",
-                "./cfgs/hyundai/exp1/model/autoencoder/kitti_clip_autoencoder.yaml"
+                "./cfgs/hyundai/exp1/model/autoencoder/kitti_clip_autoencoder.yaml",
+                "--ckpt",
+                "/home/OpenPCDet/output/cfgs/hyundai/exp1/model/autoencoder/kitti_clip_autoencoder/default/ckpt/checkpoint_epoch_19.pth"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0",

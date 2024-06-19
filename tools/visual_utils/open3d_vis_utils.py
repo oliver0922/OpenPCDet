@@ -48,7 +48,7 @@ def get_coor_colors(obj_labels):
     return label_rgba
 
 
-def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scores=None, point_colors=None, draw_origin=True):
+def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scores=None, point_colors=None, draw_origin=True, index=0):
     if isinstance(points, torch.Tensor):
         points = points.cpu().numpy()
     if isinstance(gt_boxes, torch.Tensor):
@@ -57,7 +57,7 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
         ref_boxes = ref_boxes.cpu().numpy()
 
     vis = open3d.visualization.Visualizer()
-    vis.create_window()
+    vis.create_window(visible = False)
 
     vis.get_render_option().point_size = 1.0
     vis.get_render_option().background_color = np.zeros(3)
@@ -86,7 +86,7 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
     # vis.destroy_window()
     vis.poll_events()
     vis.update_renderer()
-    vis.capture_screen_image('/home/OpenPCDet/visualization/prediction/boundingbox/output.png')  # Save the rendered image
+    vis.capture_screen_image(f'/data/hyundai_output/{str(index).zfill(6)}.png')  # Save the rendered image
     vis.destroy_window()
 
     

@@ -118,16 +118,11 @@ def main():
     tb_log = SummaryWriter(log_dir=str(output_dir / 'tensorboard')) if cfg.LOCAL_RANK == 0 else None
 
     logger.info("----------- Create dataloader & network & optimizer -----------")
-    train_set, train_loader, train_sampler = build_dataloader(
+    test_set, test_loader, sampler = build_dataloader(
         dataset_cfg=cfg.DATA_CONFIG,
         class_names=cfg.CLASS_NAMES,
         batch_size=args.batch_size,
-        dist=dist_train, workers=args.workers,
-        logger=logger,
-        training=True,
-        merge_all_iters_to_one_epoch=args.merge_all_iters_to_one_epoch,
-        total_epochs=args.epochs,
-        seed=666 if args.fix_random_seed else None
+        dist=dist_test, workers=args.workers, logger=logger, training=True
     )
 
     model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=train_set)
@@ -163,7 +158,7 @@ def main():
 
     model.train()  # before wrap to DistributedDataParallel to support fixed some parameters
     if dist_train:
-        model = nn.parallel.DistributedDataParallel(model,find_unused_parameters=True, device_ids=[cfg.LOCAL_RANK % torch.cuda.device_count()])
+        model = nn.parallel.DistributedDataParallel(model,find_unused_parameters=False, device_ids=[cfg.LOCAL_RANK % torch.cuda.device_count()])
     logger.info(f'----------- Model {cfg.MODEL.NAME} created, param count: {sum([m.numel() for m in model.parameters()])} -----------')
     logger.info(model)
 

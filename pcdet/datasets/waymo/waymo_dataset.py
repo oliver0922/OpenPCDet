@@ -84,6 +84,8 @@ class WaymoDataset(DatasetTemplate):
             for k in range(0, len(self.infos), self.dataset_cfg.SAMPLED_INTERVAL[mode]):
                 sampled_waymo_infos.append(self.infos[k])
             self.infos = sampled_waymo_infos
+            # del(self.infos[532])
+            del(self.infos[266])
             self.logger.info('Total sampled samples for Waymo dataset: %d' % len(self.infos))
             
         use_sequence_data = self.dataset_cfg.get('SEQUENCE_CONFIG', None) is not None and self.dataset_cfg.SEQUENCE_CONFIG.ENABLED
